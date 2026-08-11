@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'screens/login_screen.dart';
+import 'theme/app_theme.dart';
 
 void main() {
   runApp(const SocorroFacilApp());
@@ -13,7 +14,7 @@ class SocorroFacilApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Socorro Fácil',
-      theme: ThemeData(primarySwatch: Colors.red),
+      theme: AppTheme.dark,
       home: const LoginScreen(),
     );
   }

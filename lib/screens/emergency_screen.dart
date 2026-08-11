@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_theme.dart';
+import '../widgets/app_card.dart';
+import '../widgets/mono_tag.dart';
 
 class EmergencyScreen extends StatefulWidget {
   const EmergencyScreen({super.key});
@@ -35,27 +39,84 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
     });
   }
 
-  Widget infoItem(String texto) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Text(texto, style: const TextStyle(fontSize: 16)),
-    );
-  }
-
   void mostrarMensagem(String mensagem) {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(mensagem)));
   }
 
+  Widget _infoRow(IconData icon, String label, String valor) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: AppColors.accentCyan),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label.toUpperCase(), style: monoStyle(fontSize: 9.5)),
+                const SizedBox(height: 2),
+                Text(
+                  valor,
+                  style: const TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _actionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+    bool filled = false,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      child: filled
+          ? ElevatedButton.icon(
+              onPressed: onTap,
+              icon: Icon(icon),
+              label: Text(label),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: color,
+                foregroundColor: Colors.white,
+                side: BorderSide(color: color),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            )
+          : OutlinedButton.icon(
+              onPressed: onTap,
+              icon: Icon(icon, color: color),
+              label: Text(label, style: TextStyle(color: color)),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: color.withValues(alpha: 0.5)),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.bgDark,
       appBar: AppBar(
-        title: const Text("Emergência"),
-        backgroundColor: const Color(0xFFD92D20),
-        foregroundColor: Colors.white,
+        title: Text(
+          'EMERGÊNCIA',
+          style: monoStyle(fontSize: 12, color: AppColors.textPrimary),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -64,104 +125,98 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
             constraints: const BoxConstraints(maxWidth: 600),
             child: Column(
               children: [
+                // Card SOS em destaque
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(22),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.red.shade300),
+                    color: AppColors.bgPanelAlt,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppColors.emergencyRed.withValues(alpha: 0.5),
+                    ),
                   ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.medical_information, color: Colors.red),
-                          SizedBox(width: 10),
-                          Text(
-                            "Informações Médicas",
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
+                      Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: AppColors.emergencyRed.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: const Icon(
+                          Icons.local_hospital,
+                          color: AppColors.emergencyRed,
+                          size: 28,
+                        ),
                       ),
-
+                      const SizedBox(height: 14),
+                      Text(
+                        'Precisa de ajuda agora?',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Toque abaixo para acionar o SAMU (192).',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
                       const SizedBox(height: 18),
-
-                      infoItem("👤 Nome: $nome"),
-                      infoItem("🩸 Tipo Sanguíneo: $sangue"),
-                      infoItem("⚠️ Alergias: $alergias"),
-                      infoItem("💊 Medicamentos: $medicamentos"),
-                      infoItem("🩺 Condições: $doencas"),
-                      infoItem("📞 Contato: $contato"),
+                      _actionButton(
+                        icon: Icons.local_hospital,
+                        label: 'Ligar para o SAMU (192)',
+                        color: AppColors.emergencyRed,
+                        filled: true,
+                        onTap: () =>
+                            mostrarMensagem('Ligação para o SAMU simulada'),
+                      ),
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
 
-                SizedBox(
-                  width: double.infinity,
-                  height: 65,
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.local_hospital),
-                    label: const Text(
-                      "Ligar para o SAMU (192)",
-                      style: TextStyle(fontSize: 18),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                    ),
-                    onPressed: () {
-                      mostrarMensagem("Ligação para o SAMU simulada");
-                    },
+                // Card de informações médicas
+                AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const MonoTag('Ficha de emergência'),
+                      const SizedBox(height: 12),
+                      _infoRow(Icons.person_outline, 'Nome', nome),
+                      _infoRow(Icons.bloodtype, 'Tipo sanguíneo', sangue),
+                      _infoRow(Icons.warning_amber, 'Alergias', alergias),
+                      _infoRow(Icons.medication, 'Medicamentos', medicamentos),
+                      _infoRow(Icons.medical_information, 'Condições', doencas),
+                      _infoRow(Icons.phone, 'Contato', contato),
+                    ],
                   ),
                 ),
 
-                const SizedBox(height: 15),
+                const SizedBox(height: 16),
 
-                SizedBox(
-                  width: double.infinity,
-                  height: 65,
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.location_on),
-                    label: const Text(
-                      "Compartilhar Localização",
-                      style: TextStyle(fontSize: 18),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                    ),
-                    onPressed: () {
-                      mostrarMensagem("Localização compartilhada simulada");
-                    },
-                  ),
+                _actionButton(
+                  icon: Icons.location_on,
+                  label: 'Compartilhar Localização',
+                  color: AppColors.accentBlueLight,
+                  onTap: () =>
+                      mostrarMensagem('Localização compartilhada simulada'),
                 ),
-
-                const SizedBox(height: 15),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 65,
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.contact_phone),
-                    label: const Text(
-                      "Contato de Emergência",
-                      style: TextStyle(fontSize: 18),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                    ),
-                    onPressed: () {
-                      mostrarMensagem("Ligando para: $contato");
-                    },
-                  ),
+                const SizedBox(height: 12),
+                _actionButton(
+                  icon: Icons.contact_phone,
+                  label: 'Contato de Emergência',
+                  color: AppColors.successGreen,
+                  onTap: () => mostrarMensagem('Ligando para: $contato'),
                 ),
               ],
             ),

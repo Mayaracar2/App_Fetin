@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_theme.dart';
+import '../widgets/app_card.dart';
+import '../widgets/app_text_field.dart';
+import '../widgets/mono_tag.dart';
 
 class RegisterScreen extends StatelessWidget {
   const RegisterScreen({super.key});
@@ -6,119 +11,93 @@ class RegisterScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.bgDark,
       appBar: AppBar(
-        title: const Text("Criar Conta"),
-        backgroundColor: const Color(0xFFD92D20),
-        foregroundColor: Colors.white,
+        title: Text(
+          'CRIAR CONTA',
+          style: monoStyle(fontSize: 12, color: AppColors.textPrimary),
+        ),
       ),
       body: Center(
         child: SingleChildScrollView(
-          child: Container(
-            width: 400,
-            margin: const EdgeInsets.all(20),
-            padding: const EdgeInsets.all(30),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                const Icon(
-                  Icons.person_add,
-                  color: Color(0xFFD92D20),
-                  size: 70,
-                ),
-
-                const SizedBox(height: 15),
-
-                const Text(
-                  "Cadastro",
-                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-                ),
-
-                const SizedBox(height: 30),
-
-                TextField(
-                  decoration: InputDecoration(
-                    labelText: "Nome Completo",
-                    prefixIcon: const Icon(Icons.person),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 15),
-
-                TextField(
-                  decoration: InputDecoration(
-                    labelText: "E-mail",
-                    prefixIcon: const Icon(Icons.email),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 15),
-
-                TextField(
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: "Senha",
-                    prefixIcon: const Icon(Icons.lock),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 15),
-
-                TextField(
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: "Confirmar Senha",
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 25),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 55,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFD92D20),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: AppCard(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const MonoTag('Novo cadastro'),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Criar minha conta',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
                       ),
                     ),
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Cadastro realizado!")),
-                      );
-                    },
-                    child: const Text(
-                      "Cadastrar",
-                      style: TextStyle(fontSize: 18),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Leva menos de um minuto.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textMuted,
+                      ),
                     ),
-                  ),
+
+                    const SizedBox(height: 24),
+
+                    const AppTextField(
+                      label: 'Nome completo',
+                      hint: 'Seu nome',
+                      icon: Icons.person_outline,
+                    ),
+                    const SizedBox(height: 16),
+
+                    const AppTextField(
+                      label: 'E-mail',
+                      hint: 'seuemail@exemplo.com',
+                      icon: Icons.email_outlined,
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 16),
+
+                    const AppTextField(
+                      label: 'Senha',
+                      hint: 'Crie uma senha',
+                      icon: Icons.lock_outline,
+                      obscureText: true,
+                    ),
+                    const SizedBox(height: 16),
+
+                    const AppTextField(
+                      label: 'Confirmar senha',
+                      hint: 'Repita a senha',
+                      icon: Icons.lock_outline,
+                      obscureText: true,
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Cadastro realizado!'),
+                            ),
+                          );
+                        },
+                        child: const Text('Cadastrar'),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),

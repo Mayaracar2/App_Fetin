@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_theme.dart';
+import '../widgets/app_card.dart';
+import '../widgets/app_text_field.dart';
+import '../widgets/mono_tag.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -63,132 +68,102 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.dispose();
   }
 
-  Widget campo({
-    required String label,
-    required TextEditingController controller,
-    String? hint,
-    IconData? icon,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 15),
-      child: TextField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
-          hintText: hint,
-          prefixIcon: icon == null ? null : Icon(icon),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.bgDark,
       appBar: AppBar(
-        title: const Text("Meu Perfil de Saúde"),
-        backgroundColor: const Color(0xFFD92D20),
-        foregroundColor: Colors.white,
+        title: Text(
+          'MEU PERFIL DE SAÚDE',
+          style: monoStyle(fontSize: 11.5, color: AppColors.textPrimary),
+        ),
       ),
       body: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 600),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                const Icon(
-                  Icons.medical_information,
-                  color: Color(0xFFD92D20),
-                  size: 70,
-                ),
-
-                const SizedBox(height: 10),
-
-                const Text(
-                  "Informações importantes",
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
-
-                const SizedBox(height: 6),
-
-                const Text(
-                  "Esses dados podem ajudar em uma emergência.",
-                  style: TextStyle(color: Colors.grey),
-                  textAlign: TextAlign.center,
-                ),
-
-                const SizedBox(height: 25),
-
-                campo(
-                  label: "Nome completo",
-                  controller: nomeController,
-                  icon: Icons.person,
-                ),
-
-                campo(
-                  label: "Tipo sanguíneo",
-                  controller: sangueController,
-                  hint: "Ex: O+, A-, B+",
-                  icon: Icons.bloodtype,
-                ),
-
-                campo(
-                  label: "Alergias",
-                  controller: alergiasController,
-                  hint: "Ex: Penicilina, Dipirona",
-                  icon: Icons.warning_amber,
-                ),
-
-                campo(
-                  label: "Medicamentos em uso",
-                  controller: medicamentosController,
-                  hint: "Ex: Losartana, Insulina",
-                  icon: Icons.medication,
-                ),
-
-                campo(
-                  label: "Doenças ou condições",
-                  controller: doencasController,
-                  hint: "Ex: Diabetes, Hipertensão, Asma",
-                  icon: Icons.health_and_safety,
-                ),
-
-                campo(
-                  label: "Contato de emergência",
-                  controller: contatoController,
-                  hint: "Ex: (35) 99999-9999",
-                  icon: Icons.phone,
-                ),
-
-                const SizedBox(height: 10),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 55,
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.save),
-                    label: const Text(
-                      "Salvar Perfil",
-                      style: TextStyle(fontSize: 18),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: AppCard(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const MonoTag('Ficha de saúde'),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Informações importantes',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFD92D20),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    onPressed: salvarDados,
                   ),
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  Text(
+                    'Esses dados podem ajudar em uma emergência.',
+                    style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  AppTextField(
+                    label: 'Nome completo',
+                    controller: nomeController,
+                    icon: Icons.person_outline,
+                  ),
+                  const SizedBox(height: 16),
+
+                  AppTextField(
+                    label: 'Tipo sanguíneo',
+                    controller: sangueController,
+                    hint: 'Ex: O+, A-, B+',
+                    icon: Icons.bloodtype,
+                  ),
+                  const SizedBox(height: 16),
+
+                  AppTextField(
+                    label: 'Alergias',
+                    controller: alergiasController,
+                    hint: 'Ex: Penicilina, Dipirona',
+                    icon: Icons.warning_amber,
+                  ),
+                  const SizedBox(height: 16),
+
+                  AppTextField(
+                    label: 'Medicamentos em uso',
+                    controller: medicamentosController,
+                    hint: 'Ex: Losartana, Insulina',
+                    icon: Icons.medication_outlined,
+                  ),
+                  const SizedBox(height: 16),
+
+                  AppTextField(
+                    label: 'Doenças ou condições',
+                    controller: doencasController,
+                    hint: 'Ex: Diabetes, Hipertensão, Asma',
+                    icon: Icons.health_and_safety_outlined,
+                  ),
+                  const SizedBox(height: 16),
+
+                  AppTextField(
+                    label: 'Contato de emergência',
+                    controller: contatoController,
+                    hint: 'Ex: (35) 99999-9999',
+                    icon: Icons.phone_outlined,
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.save_outlined, size: 18),
+                      label: const Text('Salvar Perfil'),
+                      onPressed: salvarDados,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

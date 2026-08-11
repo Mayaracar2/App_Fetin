@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_theme.dart';
+import '../widgets/app_card.dart';
+import '../widgets/status_badge.dart';
 import 'profile_screen.dart';
 import 'videos_screen.dart';
 import 'package:socorro_facil/screens/emergency_screen.dart';
@@ -14,42 +18,50 @@ class HomeScreen extends StatelessWidget {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(22),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 28,
-                backgroundColor: color.withValues(alpha: 0.12),
-                child: Icon(icon, color: color, size: 32),
-              ),
-              const SizedBox(width: 18),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(subtitle, style: const TextStyle(color: Colors.grey)),
-                  ],
-                ),
-              ),
-              const Icon(Icons.arrow_forward_ios, size: 18),
-            ],
+    return AppCard(
+      onTap: onTap,
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            alignment: Alignment.center,
+            child: Icon(icon, color: color, size: 26),
           ),
-        ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Icon(
+            Icons.arrow_forward_ios,
+            size: 15,
+            color: AppColors.textFaint,
+          ),
+        ],
       ),
     );
   }
@@ -57,85 +69,102 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.bgDark,
       appBar: AppBar(
-        title: const Text('Socorro Fácil'),
-        backgroundColor: const Color(0xFFD92D20),
-        foregroundColor: Colors.white,
+        title: Text(
+          'SOCORRO FÁCIL',
+          style: monoStyle(fontSize: 13, color: AppColors.textPrimary),
+        ),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16),
+            child: Center(child: StatusBadge()),
+          ),
+        ],
       ),
       body: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 600),
-          padding: const EdgeInsets.all(22),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Olá! 👋',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'O que você precisa acessar?',
-                style: TextStyle(color: Colors.grey, fontSize: 16),
-              ),
-              const SizedBox(height: 24),
+        child: SingleChildScrollView(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 600),
+            padding: const EdgeInsets.all(22),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Olá! 👋',
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'O que você precisa acessar?',
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+                ),
+                const SizedBox(height: 24),
 
-              _card(
-                icon: Icons.warning_amber_rounded,
-                title: 'Emergência',
-                subtitle: 'Acesso rápido aos contatos de socorro',
-                color: Colors.red,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => EmergencyScreen()),
-                  );
-                },
-              ),
+                _card(
+                  icon: Icons.warning_amber_rounded,
+                  title: 'Emergência',
+                  subtitle: 'Acesso rápido aos contatos de socorro',
+                  color: AppColors.emergencyRed,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => EmergencyScreen()),
+                    );
+                  },
+                ),
+                const SizedBox(height: 14),
 
-              _card(
-                icon: Icons.person,
-                title: 'Meu Perfil de Saúde',
-                subtitle: 'Alergias, remédios e tipo sanguíneo',
-                color: Colors.blue,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ProfileScreen(),
-                    ),
-                  );
-                },
-              ),
-              _card(
-                icon: Icons.badge,
-                title: 'Carteira Médica',
-                subtitle: 'Visualize seus dados em formato de cartão',
-                color: Colors.purple,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const MedicalCardScreen(),
-                    ),
-                  );
-                },
-              ),
+                _card(
+                  icon: Icons.person,
+                  title: 'Meu Perfil de Saúde',
+                  subtitle: 'Alergias, remédios e tipo sanguíneo',
+                  color: AppColors.accentBlueLight,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ProfileScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 14),
 
-              _card(
-                icon: Icons.video_library,
-                title: 'Vídeos de Primeiros Socorros',
-                subtitle: 'Aprenda como agir em emergências',
-                color: Colors.green,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const VideosScreen()),
-                  );
-                },
-              ),
-            ],
+                _card(
+                  icon: Icons.badge,
+                  title: 'Carteira Médica',
+                  subtitle: 'Visualize seus dados em formato de cartão',
+                  color: AppColors.accentCyan,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MedicalCardScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 14),
+
+                _card(
+                  icon: Icons.video_library,
+                  title: 'Vídeos de Primeiros Socorros',
+                  subtitle: 'Aprenda como agir em emergências',
+                  color: AppColors.successGreen,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const VideosScreen()),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
