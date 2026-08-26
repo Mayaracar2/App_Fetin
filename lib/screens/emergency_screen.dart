@@ -119,7 +119,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
         child: Center(
           child: Container(
             constraints: const BoxConstraints(maxWidth: 600),

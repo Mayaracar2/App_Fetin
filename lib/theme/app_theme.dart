@@ -22,6 +22,40 @@ TextStyle monoStyle({
 class AppTheme {
   AppTheme._();
 
+  static ThemeData get light {
+    final base = ThemeData.light(useMaterial3: true);
+    return base.copyWith(
+      scaffoldBackgroundColor: const Color(0xFFF3F8FA),
+      textTheme: GoogleFonts.nunitoSansTextTheme(base.textTheme).apply(
+        bodyColor: const Color(0xFF183B50),
+        displayColor: const Color(0xFF183B50),
+      ),
+      colorScheme: base.colorScheme.copyWith(
+        surface: Colors.white,
+        primary: AppColors.accentBlue,
+        secondary: AppColors.successGreenDark,
+        error: AppColors.emergencyRed,
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.white,
+        foregroundColor: Color(0xFF183B50),
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: Colors.white,
+        hintStyle: const TextStyle(color: Color(0xFF7197B0)),
+        labelStyle: const TextStyle(color: Color(0xFF5F7D8F)),
+        prefixIconColor: const Color(0xFF7197B0),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFFC9DCE7)),
+        ),
+      ),
+    );
+  }
+
   static ThemeData get dark {
     final base = ThemeData.dark(useMaterial3: true);
     final textTheme = GoogleFonts.ibmPlexSansTextTheme(base.textTheme).apply(

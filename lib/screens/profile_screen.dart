@@ -80,7 +80,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 560),
             child: AppCard(
