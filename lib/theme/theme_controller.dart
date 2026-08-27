@@ -4,12 +4,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ThemeController {
   ThemeController._();
 
-  static const _preferenceKey = 'dark_mode';
+  static const _preferenceKey = 'theme_mode';
   static final mode = ValueNotifier<ThemeMode>(ThemeMode.light);
 
   static Future<void> initialize() async {
     final preferences = await SharedPreferences.getInstance();
-    mode.value = (preferences.getBool(_preferenceKey) ?? false)
+    final saved = preferences.getString(_preferenceKey);
+    mode.value = saved == ThemeMode.dark.name
         ? ThemeMode.dark
         : ThemeMode.light;
   }
@@ -18,6 +19,12 @@ class ThemeController {
     final dark = mode.value != ThemeMode.dark;
     mode.value = dark ? ThemeMode.dark : ThemeMode.light;
     final preferences = await SharedPreferences.getInstance();
-    await preferences.setBool(_preferenceKey, dark);
+    await preferences.setString(_preferenceKey, mode.value.name);
+  }
+
+  static Future<void> setMode(ThemeMode newMode) async {
+    mode.value = newMode;
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(_preferenceKey, newMode.name);
   }
 }

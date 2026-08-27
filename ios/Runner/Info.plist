@@ -28,6 +28,16 @@
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Usamos sua localização para auxiliar você ao iniciar uma ligação de emergência.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>A camera pode ser usada para atualizar sua foto de perfil.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>A galeria pode ser usada para escolher sua foto de perfil.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>O microfone pode ser usado em recursos de assistencia.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Seus contatos podem ser usados como contatos de emergencia.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>O Face ID protege o acesso aos seus dados de saude.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
