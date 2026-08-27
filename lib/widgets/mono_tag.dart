@@ -18,9 +18,13 @@ class MonoTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final effectiveColor = !dark && color == AppColors.accentCyan
+        ? AppColors.accentBlue
+        : color;
     final label = Text(
       text.toUpperCase(),
-      style: monoStyle(fontSize: fontSize, color: color),
+      style: monoStyle(fontSize: fontSize, color: effectiveColor),
     );
 
     if (!asChip) return label;
@@ -28,9 +32,11 @@ class MonoTag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: AppColors.bgField,
+        color: dark ? AppColors.bgField : const Color(0xFFEDF8FC),
         borderRadius: BorderRadius.circular(5),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(
+          color: dark ? AppColors.border : const Color(0xFFC9DCE7),
+        ),
       ),
       child: label,
     );

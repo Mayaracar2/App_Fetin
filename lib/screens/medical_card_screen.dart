@@ -4,6 +4,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'profile_screen.dart';
+import '../theme/app_colors.dart';
 
 const _navy = Color(0xFF17354B);
 const _deepNavy = Color(0xFF0D2E47);
@@ -13,7 +14,6 @@ const _background = Color(0xFFF4F9FC);
 const _border = Color(0xFFC9DCE7);
 const _red = Color(0xFFE5484D);
 const _green = Color(0xFF2A9876);
-bool _medicalDark = false;
 
 class MedicalCardScreen extends StatefulWidget {
   const MedicalCardScreen({super.key});
@@ -24,6 +24,12 @@ class MedicalCardScreen extends StatefulWidget {
 
 class _MedicalCardScreenState extends State<MedicalCardScreen> {
   final _scrollController = ScrollController();
+  bool _isDark = false;
+
+  Color get _surface => _isDark ? AppColors.bgPanel : Colors.white;
+  Color get _primaryText => _isDark ? AppColors.textPrimary : _navy;
+  Color get _secondaryText => _isDark ? AppColors.textMuted : _muted;
+  Color get _outline => _isDark ? AppColors.border : _border;
   String nome = 'Não informado';
   String sangue = 'Não informado';
   String alergias = 'Não informado';
@@ -73,20 +79,20 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    _medicalDark = Theme.of(context).brightness == Brightness.dark;
+    _isDark = Theme.of(context).brightness == Brightness.dark;
     final page = Scaffold(
-      backgroundColor: _medicalDark ? const Color(0xFF071522) : _background,
+      backgroundColor: _isDark ? AppColors.bgDark : _background,
       appBar: AppBar(
-        backgroundColor: _medicalDark
-            ? const Color(0xFF071522)
+        backgroundColor: _isDark
+            ? AppColors.bgPanelAlt
             : const Color(0xFFF9FCFE),
-        foregroundColor: _medicalDark ? const Color(0xFFE6F4FF) : _navy,
+        foregroundColor: _primaryText,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         title: Text(
           'CARTEIRA MÉDICA',
           style: GoogleFonts.ibmPlexMono(
-            color: _navy,
+            color: _primaryText,
             fontSize: 12,
             fontWeight: FontWeight.w600,
             letterSpacing: 1,
@@ -100,9 +106,9 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
           ),
           const SizedBox(width: 8),
         ],
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(height: 1, color: _border),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(height: 1, color: _outline),
         ),
       ),
       body: loading
@@ -166,19 +172,19 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
         ),
       ),
       const SizedBox(height: 8),
-      const Text(
+      Text(
         'Sua ficha para situações de emergência.',
         style: TextStyle(
-          color: _navy,
+          color: _primaryText,
           fontSize: 25,
           height: 1.15,
           fontWeight: FontWeight.w600,
         ),
       ),
       const SizedBox(height: 9),
-      const Text(
+      Text(
         'Mantenha estes dados atualizados para ajudar a equipe durante o atendimento.',
-        style: TextStyle(color: _muted, fontSize: 13, height: 1.5),
+        style: TextStyle(color: _secondaryText, fontSize: 13, height: 1.5),
       ),
     ],
   );
@@ -187,16 +193,20 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
     width: double.infinity,
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: const Color(0xFFFBFDFE),
+      color: _isDark ? AppColors.bgPanel : const Color(0xFFFBFDFE),
       borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: const Color(0xFFB9D8E8)),
-      boxShadow: const [
-        BoxShadow(
-          color: Color(0x1E1B506A),
-          blurRadius: 34,
-          offset: Offset(0, 16),
-        ),
-      ],
+      border: Border.all(
+        color: _isDark ? AppColors.border : const Color(0xFFB9D8E8),
+      ),
+      boxShadow: _isDark
+          ? const []
+          : const [
+              BoxShadow(
+                color: Color(0x1E1B506A),
+                blurRadius: 34,
+                offset: Offset(0, 16),
+              ),
+            ],
     ),
     child: Column(
       children: [
@@ -227,15 +237,15 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
                   Text(
                     'SOPS 2.0',
                     style: GoogleFonts.ibmPlexMono(
-                      color: _navy,
+                      color: _primaryText,
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       letterSpacing: .8,
                     ),
                   ),
-                  const Text(
+                  Text(
                     'Carteira médica de emergência',
-                    style: TextStyle(color: Color(0xFF6F8C9D), fontSize: 9),
+                    style: TextStyle(color: _secondaryText, fontSize: 9),
                   ),
                 ],
               ),
@@ -243,7 +253,9 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
               decoration: BoxDecoration(
-                color: const Color(0xFFEDF8F4),
+                color: _isDark
+                    ? AppColors.successGreenBg
+                    : const Color(0xFFEDF8F4),
                 borderRadius: BorderRadius.circular(5),
               ),
               child: Text(
@@ -257,7 +269,7 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
             ),
           ],
         ),
-        const Divider(height: 25, color: Color(0xFFD8E7EE)),
+        Divider(height: 25, color: _outline),
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(20),
@@ -308,7 +320,7 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
           ),
         ),
         const SizedBox(height: 14),
-        const Row(
+        Row(
           children: [
             CircleAvatar(radius: 5, backgroundColor: _green),
             SizedBox(width: 8),
@@ -316,7 +328,7 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
               child: Text(
                 'Ficha sincronizada e disponível',
                 style: TextStyle(
-                  color: _navy,
+                  color: _primaryText,
                   fontSize: 11.5,
                   fontWeight: FontWeight.w600,
                 ),
@@ -356,16 +368,18 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
     width: double.infinity,
     padding: const EdgeInsets.all(20),
     decoration: BoxDecoration(
-      color: _medicalDark ? const Color(0xFF102637) : Colors.white,
+      color: _surface,
       borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: _border),
-      boxShadow: const [
-        BoxShadow(
-          color: Color(0x101B506A),
-          blurRadius: 20,
-          offset: Offset(0, 8),
-        ),
-      ],
+      border: Border.all(color: _outline),
+      boxShadow: _isDark
+          ? const []
+          : const [
+              BoxShadow(
+                color: Color(0x101B506A),
+                blurRadius: 20,
+                offset: Offset(0, 8),
+              ),
+            ],
     ),
     child: LayoutBuilder(
       builder: (context, constraints) {
@@ -401,9 +415,11 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
               decoration: BoxDecoration(
-                color: const Color(0xFFEDF8FC),
+                color: _isDark ? AppColors.bgField : const Color(0xFFEDF8FC),
                 borderRadius: BorderRadius.circular(5),
-                border: Border.all(color: const Color(0xFFB9D8E8)),
+                border: Border.all(
+                  color: _isDark ? AppColors.border : const Color(0xFFB9D8E8),
+                ),
               ),
               child: Text(
                 'ACESSO RÁPIDO',
@@ -416,20 +432,24 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
               ),
             ),
             const SizedBox(height: 11),
-            const Text(
+            Text(
               'Escaneie a carteira médica',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: _navy,
+                color: _primaryText,
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 7),
-            const Text(
+            Text(
               'O QR Code reúne os dados essenciais desta ficha para consulta rápida durante um atendimento.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: _muted, fontSize: 12, height: 1.45),
+              style: TextStyle(
+                color: _secondaryText,
+                fontSize: 12,
+                height: 1.45,
+              ),
             ),
             const SizedBox(height: 12),
             const Row(
@@ -465,9 +485,9 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
     width: double.infinity,
     padding: const EdgeInsets.all(20),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: _surface,
       borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: _border),
+      border: Border.all(color: _outline),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -521,11 +541,13 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
     width: double.infinity,
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: const Color(0xFFFFF1F2),
+      color: _isDark ? const Color(0xFF321B25) : const Color(0xFFFFF1F2),
       borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: const Color(0xFFF2B3B7)),
+      border: Border.all(
+        color: _isDark ? const Color(0xFF7D3945) : const Color(0xFFF2B3B7),
+      ),
     ),
-    child: const Row(
+    child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(Icons.emergency_outlined, color: _red, size: 21),
@@ -534,7 +556,9 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
           child: Text(
             'Em caso de emergência, apresente esta carteira à equipe. Ligue 192 para acionar o SAMU.',
             style: TextStyle(
-              color: Color(0xFFA33B48),
+              color: _isDark
+                  ? const Color(0xFFFFA8B2)
+                  : const Color(0xFFA33B48),
               fontSize: 12.5,
               height: 1.45,
               fontWeight: FontWeight.w600,
@@ -588,55 +612,62 @@ class _DataRow extends StatelessWidget {
   final bool last;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: EdgeInsets.only(bottom: last ? 0 : 15, top: last ? 0 : 0),
-    margin: EdgeInsets.only(bottom: last ? 0 : 15),
-    decoration: BoxDecoration(
-      border: last
-          ? null
-          : const Border(bottom: BorderSide(color: Color(0xFFE1ECF1))),
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 38,
-          height: 38,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: .11),
-            borderRadius: BorderRadius.circular(9),
-          ),
-          child: Icon(icon, color: color, size: 19),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label.toUpperCase(),
-                style: GoogleFonts.ibmPlexMono(
-                  color: const Color(0xFF6F8C9D),
-                  fontSize: 8.5,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: .7,
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: EdgeInsets.only(bottom: last ? 0 : 15, top: last ? 0 : 0),
+      margin: EdgeInsets.only(bottom: last ? 0 : 15),
+      decoration: BoxDecoration(
+        border: last
+            ? null
+            : Border(
+                bottom: BorderSide(
+                  color: dark ? AppColors.border : const Color(0xFFE1ECF1),
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: const TextStyle(
-                  color: _navy,
-                  fontSize: 13.5,
-                  height: 1.35,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: .11),
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: Icon(icon, color: color, size: 19),
           ),
-        ),
-      ],
-    ),
-  );
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label.toUpperCase(),
+                  style: GoogleFonts.ibmPlexMono(
+                    color: dark ? AppColors.textMuted : const Color(0xFF6F8C9D),
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: .7,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: TextStyle(
+                    color: dark ? AppColors.textPrimary : _navy,
+                    fontSize: 13.5,
+                    height: 1.35,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

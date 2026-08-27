@@ -19,7 +19,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final alergiasController = TextEditingController();
   final medicamentosController = TextEditingController();
   final doencasController = TextEditingController();
-  final contatoController = TextEditingController();
+  final List<TextEditingController> contatoControllers = [
+    TextEditingController(),
+  ];
 
   @override
   void initState() {
@@ -30,13 +32,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> carregarDados() async {
     final prefs = await SharedPreferences.getInstance();
 
+    final savedContacts = prefs.getStringList('contatos_emergencia');
+    final legacyContact = prefs.getString('contato') ?? '';
+    final contacts = savedContacts != null && savedContacts.isNotEmpty
+        ? savedContacts
+        : [legacyContact];
+    if (!mounted) return;
     setState(() {
       nomeController.text = prefs.getString('nome') ?? '';
       sangueController.text = prefs.getString('sangue') ?? '';
       alergiasController.text = prefs.getString('alergias') ?? '';
       medicamentosController.text = prefs.getString('medicamentos') ?? '';
       doencasController.text = prefs.getString('doencas') ?? '';
-      contatoController.text = prefs.getString('contato') ?? '';
+      for (final controller in contatoControllers) {
+        controller.dispose();
+      }
+      contatoControllers
+        ..clear()
+        ..addAll(
+          contacts.map((contact) => TextEditingController(text: contact)),
+        );
     });
   }
 
@@ -48,13 +63,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await prefs.setString('alergias', alergiasController.text);
     await prefs.setString('medicamentos', medicamentosController.text);
     await prefs.setString('doencas', doencasController.text);
-    await prefs.setString('contato', contatoController.text);
+    final contacts = contatoControllers
+        .map((controller) => controller.text.trim())
+        .where((contact) => contact.isNotEmpty)
+        .toList();
+    await prefs.setStringList('contatos_emergencia', contacts);
+    // Mantém a chave antiga para as telas que exibem os contatos de emergência.
+    await prefs.setString(
+      'contato',
+      contacts.isEmpty ? '' : contacts.join(' · '),
+    );
 
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Perfil de saúde salvo com sucesso!')),
     );
+  }
+
+  void _addContact() {
+    setState(() => contatoControllers.add(TextEditingController()));
+  }
+
+  void _removeContact(int index) {
+    if (contatoControllers.length == 1) return;
+    final controller = contatoControllers.removeAt(index);
+    controller.dispose();
+    setState(() {});
   }
 
   @override
@@ -64,18 +99,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
     alergiasController.dispose();
     medicamentosController.dispose();
     doencasController.dispose();
-    contatoController.dispose();
+    for (final controller in contatoControllers) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final primary = dark ? AppColors.textPrimary : const Color(0xFF183B50);
+    final secondary = dark ? AppColors.textMuted : const Color(0xFF638092);
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: dark ? AppColors.bgDark : const Color(0xFFF3F8FA),
       appBar: AppBar(
         title: Text(
           'MEU PERFIL DE SAÚDE',
-          style: monoStyle(fontSize: 11.5, color: AppColors.textPrimary),
+          style: monoStyle(fontSize: 11.5, color: primary),
         ),
       ),
       body: Center(
@@ -95,13 +135,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      color: primary,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Esses dados podem ajudar em uma emergência.',
-                    style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+                    style: TextStyle(fontSize: 13, color: secondary),
                   ),
 
                   const SizedBox(height: 24),
@@ -145,12 +185,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  AppTextField(
-                    label: 'Contato de emergência',
-                    controller: contatoController,
-                    hint: 'Ex: (35) 99999-9999',
-                    icon: Icons.phone_outlined,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Contatos de emergência',
+                          style: TextStyle(
+                            color: primary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: _addContact,
+                        icon: const Icon(Icons.add_rounded, size: 18),
+                        label: const Text('Adicionar'),
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 8),
+                  ...List.generate(contatoControllers.length, (index) {
+                    return Padding(
+                      padding: EdgeInsets.only(
+                        bottom: index == contatoControllers.length - 1 ? 0 : 12,
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Expanded(
+                            child: AppTextField(
+                              label: 'Contato ${index + 1}',
+                              controller: contatoControllers[index],
+                              hint: 'Ex: Maria (mãe) · (35) 99999-9999',
+                              icon: Icons.phone_outlined,
+                            ),
+                          ),
+                          if (contatoControllers.length > 1) ...[
+                            const SizedBox(width: 8),
+                            IconButton(
+                              tooltip: 'Remover contato',
+                              onPressed: () => _removeContact(index),
+                              icon: const Icon(Icons.delete_outline_rounded),
+                              color: AppColors.emergencyRed,
+                            ),
+                          ],
+                        ],
+                      ),
+                    );
+                  }),
 
                   const SizedBox(height: 24),
 

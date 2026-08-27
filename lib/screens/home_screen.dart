@@ -3,10 +3,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../theme/theme_controller.dart';
+import '../widgets/learning_dashboard.dart';
 import 'emergency_screen.dart';
 import 'login_screen.dart';
+import 'learning_journey_screen.dart';
 import 'medical_card_screen.dart';
 import 'profile_screen.dart';
+import 'settings_screen.dart';
 import 'videos_screen.dart';
 
 const _navy = Color(0xFF183B50);
@@ -156,8 +159,6 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Future<void> _toggleDarkMode() => ThemeController.toggle();
-
   String _read(SharedPreferences prefs, String key) {
     final value = prefs.getString(key)?.trim();
     return value == null || value.isEmpty ? 'Não informado' : value;
@@ -269,21 +270,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             const SizedBox(width: 9),
             IconButton(
-              tooltip: _isDarkMode ? 'Ativar modo claro' : 'Ativar modo escuro',
-              onPressed: _toggleDarkMode,
-              style: IconButton.styleFrom(
-                backgroundColor: const Color(0xFFEDF7FA),
-                side: const BorderSide(color: Color(0xFFC6DCE6)),
-              ),
-              icon: Icon(
-                _isDarkMode
-                    ? Icons.light_mode_outlined
-                    : Icons.dark_mode_outlined,
-                color: _blue,
-              ),
-            ),
-            const SizedBox(width: 4),
-            IconButton(
               tooltip: 'Meu perfil',
               onPressed: _openProfile,
               style: IconButton.styleFrom(
@@ -355,7 +341,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Icons.workspace_premium_outlined,
               'Meu progresso',
               _muted,
-              () => _showProgress(inDrawer),
+              () => _navigate(inDrawer, const LearningJourneyScreen()),
             ),
             _NavTile(
               Icons.badge_outlined,
@@ -367,6 +353,12 @@ class _HomeScreenState extends State<HomeScreen> {
               _closeDrawer(inDrawer);
               _openProfile();
             }),
+            _NavTile(
+              Icons.settings_outlined,
+              'Configurações',
+              _muted,
+              () => _navigate(inDrawer, const SettingsScreen()),
+            ),
             Divider(color: _line),
             _NavTile(
               Icons.logout,
@@ -426,15 +418,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void _navigate(bool inDrawer, Widget page) {
     _closeDrawer(inDrawer);
     Future<void>.delayed(const Duration(milliseconds: 200), () => _open(page));
-  }
-
-  void _showProgress(bool inDrawer) {
-    _closeDrawer(inDrawer);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Progresso geral: 41% · 2 aulas concluídas'),
-      ),
-    );
   }
 
   Widget _profileSummary() => Container(
@@ -556,10 +539,12 @@ class _HomeScreenState extends State<HomeScreen> {
       _hero(),
       const SizedBox(height: 18),
       _quickActions(),
-      const SizedBox(height: 20),
-      _metrics(),
+      const SizedBox(height: 28),
+      LearningDashboard(onOpenLibrary: _openVideoLibrary),
     ],
   );
+
+  void _openVideoLibrary() => _open(const VideosScreen());
 
   Widget _hero() => Container(
     width: double.infinity,
@@ -641,7 +626,7 @@ class _HomeScreenState extends State<HomeScreen> {
               'Acompanhe sua evolução',
               _green,
               false,
-              () => _showProgress(false),
+              () => _open(const LearningJourneyScreen()),
             ),
           ),
           SizedBox(
@@ -653,47 +638,6 @@ class _HomeScreenState extends State<HomeScreen> {
               const Color(0xFF6B76A5),
               false,
               () => _open(const MedicalCardScreen()),
-            ),
-          ),
-        ],
-      );
-    },
-  );
-
-  Widget _metrics() => LayoutBuilder(
-    builder: (context, constraints) {
-      final width = constraints.maxWidth >= 600
-          ? (constraints.maxWidth - 24) / 3
-          : constraints.maxWidth;
-      return Wrap(
-        spacing: 12,
-        runSpacing: 12,
-        children: [
-          SizedBox(
-            width: width,
-            child: const _Metric(
-              Icons.favorite_outline,
-              _red,
-              '2',
-              'aulas concluídas',
-            ),
-          ),
-          SizedBox(
-            width: width,
-            child: const _Metric(
-              Icons.schedule,
-              _blue,
-              '38 min',
-              'tempo estudado',
-            ),
-          ),
-          SizedBox(
-            width: width,
-            child: const _Metric(
-              Icons.workspace_premium_outlined,
-              Color(0xFFD99231),
-              'Em progresso',
-              'continue sua trilha',
             ),
           ),
         ],
@@ -969,48 +913,6 @@ class _ActionCard extends StatelessWidget {
           ],
         ),
       ),
-    ),
-  );
-}
-
-class _Metric extends StatelessWidget {
-  const _Metric(this.icon, this.color, this.value, this.label);
-  final IconData icon;
-  final Color color;
-  final String value;
-  final String label;
-  @override
-  Widget build(BuildContext context) => Container(
-    height: 115,
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: _useLearningDark ? const Color(0xFF102637) : Colors.white,
-      borderRadius: BorderRadius.circular(13),
-      border: Border.all(
-        color: _useLearningDark ? const Color(0xFF294E6B) : _border,
-      ),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, color: color, size: 21),
-        const Spacer(),
-        Text(
-          value,
-          style: TextStyle(
-            color: _useLearningDark ? const Color(0xFFE6F4FF) : _navy,
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            color: _useLearningDark ? const Color(0xFF9AB9CD) : _muted,
-            fontSize: 10.5,
-          ),
-        ),
-      ],
     ),
   );
 }

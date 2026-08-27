@@ -46,25 +46,38 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
   }
 
   Widget _infoRow(IconData icon, String label, String valor) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: AppColors.accentCyan),
+          Icon(
+            icon,
+            size: 18,
+            color: dark ? AppColors.accentCyan : AppColors.accentBlue,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label.toUpperCase(), style: monoStyle(fontSize: 9.5)),
+                Text(
+                  label.toUpperCase(),
+                  style: monoStyle(
+                    fontSize: 9.5,
+                    color: dark ? AppColors.textFaint : const Color(0xFF5F7D8F),
+                  ),
+                ),
                 const SizedBox(height: 2),
                 Text(
                   valor,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14.5,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
+                    color: dark
+                        ? AppColors.textPrimary
+                        : const Color(0xFF183B50),
                   ),
                 ),
               ],
@@ -110,12 +123,17 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final background = dark ? AppColors.bgDark : const Color(0xFFF3F8FA);
+    final surface = dark ? AppColors.bgPanelAlt : Colors.white;
+    final primary = dark ? AppColors.textPrimary : const Color(0xFF183B50);
+    final secondary = dark ? AppColors.textMuted : const Color(0xFF638092);
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: background,
       appBar: AppBar(
         title: Text(
           'EMERGÊNCIA',
-          style: monoStyle(fontSize: 12, color: AppColors.textPrimary),
+          style: monoStyle(fontSize: 12, color: primary),
         ),
       ),
       body: SingleChildScrollView(
@@ -130,7 +148,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(22),
                   decoration: BoxDecoration(
-                    color: AppColors.bgPanelAlt,
+                    color: surface,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: AppColors.emergencyRed.withValues(alpha: 0.5),
@@ -158,17 +176,14 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
+                          color: primary,
                         ),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         'Toque abaixo para acionar o SAMU (192).',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textMuted,
-                        ),
+                        style: TextStyle(fontSize: 13, color: secondary),
                       ),
                       const SizedBox(height: 18),
                       _actionButton(
@@ -207,7 +222,9 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
                 _actionButton(
                   icon: Icons.location_on,
                   label: 'Compartilhar Localização',
-                  color: AppColors.accentBlueLight,
+                  color: dark
+                      ? AppColors.accentBlueLight
+                      : AppColors.accentBlue,
                   onTap: () =>
                       mostrarMensagem('Localização compartilhada simulada'),
                 ),
@@ -215,7 +232,9 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
                 _actionButton(
                   icon: Icons.contact_phone,
                   label: 'Contato de Emergência',
-                  color: AppColors.successGreen,
+                  color: dark
+                      ? AppColors.successGreen
+                      : AppColors.successGreenDark,
                   onTap: () => mostrarMensagem('Ligando para: $contato'),
                 ),
               ],

@@ -10,12 +10,15 @@ class RegisterScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final primary = dark ? AppColors.textPrimary : const Color(0xFF183B50);
+    final secondary = dark ? AppColors.textMuted : const Color(0xFF638092);
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: dark ? AppColors.bgDark : const Color(0xFFF3F8FA),
       appBar: AppBar(
         title: Text(
           'CRIAR CONTA',
-          style: monoStyle(fontSize: 12, color: AppColors.textPrimary),
+          style: monoStyle(fontSize: 12, color: primary),
         ),
       ),
       body: Center(
@@ -36,16 +39,13 @@ class RegisterScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                        color: primary,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Leva menos de um minuto.',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textMuted,
-                      ),
+                      style: TextStyle(fontSize: 13, color: secondary),
                     ),
 
                     const SizedBox(height: 24),

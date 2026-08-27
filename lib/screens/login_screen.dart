@@ -13,8 +13,11 @@ class LoginScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final primary = dark ? AppColors.textPrimary : const Color(0xFF183B50);
+    final secondary = dark ? AppColors.textMuted : const Color(0xFF638092);
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: dark ? AppColors.bgDark : const Color(0xFFF3F8FA),
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
@@ -61,7 +64,7 @@ class LoginScreen extends StatelessWidget {
                             'SOCORRO FÁCIL',
                             style: monoStyle(
                               fontSize: 13,
-                              color: AppColors.textPrimary,
+                              color: primary,
                               letterSpacing: 1.2,
                             ),
                           ),
@@ -69,7 +72,9 @@ class LoginScreen extends StatelessWidget {
                             'Perfil de saúde de emergência',
                             style: monoStyle(
                               fontSize: 9,
-                              color: AppColors.accentCyan,
+                              color: dark
+                                  ? AppColors.accentCyan
+                                  : AppColors.accentBlue,
                             ),
                           ),
                         ],
@@ -98,16 +103,13 @@ class LoginScreen extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
+                            color: primary,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Use suas credenciais para continuar.',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textMuted,
-                          ),
+                          style: TextStyle(fontSize: 13, color: secondary),
                         ),
 
                         const SizedBox(height: 24),
@@ -131,7 +133,9 @@ class LoginScreen extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.accentCyan,
+                              color: dark
+                                  ? AppColors.accentCyan
+                                  : AppColors.accentBlue,
                             ),
                           ),
                         ),
@@ -157,8 +161,12 @@ class LoginScreen extends StatelessWidget {
 
                         Row(
                           children: [
-                            const Expanded(
-                              child: Divider(color: AppColors.border),
+                            Expanded(
+                              child: Divider(
+                                color: dark
+                                    ? AppColors.border
+                                    : const Color(0xFFD7E5EB),
+                              ),
                             ),
                             Padding(
                               padding: const EdgeInsets.symmetric(
@@ -166,8 +174,12 @@ class LoginScreen extends StatelessWidget {
                               ),
                               child: Text('ou', style: monoStyle(fontSize: 9)),
                             ),
-                            const Expanded(
-                              child: Divider(color: AppColors.border),
+                            Expanded(
+                              child: Divider(
+                                color: dark
+                                    ? AppColors.border
+                                    : const Color(0xFFD7E5EB),
+                              ),
                             ),
                           ],
                         ),

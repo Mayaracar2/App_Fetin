@@ -24,14 +24,21 @@ class AppTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label.toUpperCase(), style: monoStyle(fontSize: 10)),
-            if (trailing != null) trailing!,
+            Text(
+              label.toUpperCase(),
+              style: monoStyle(
+                fontSize: 10,
+                color: dark ? AppColors.textFaint : const Color(0xFF5F7D8F),
+              ),
+            ),
+            ?trailing,
           ],
         ),
         const SizedBox(height: 6),
@@ -39,7 +46,9 @@ class AppTextField extends StatelessWidget {
           controller: controller,
           obscureText: obscureText,
           keyboardType: keyboardType,
-          style: const TextStyle(color: AppColors.textSecondary),
+          style: TextStyle(
+            color: dark ? AppColors.textSecondary : const Color(0xFF183B50),
+          ),
           decoration: InputDecoration(
             hintText: hint,
             prefixIcon: icon != null ? Icon(icon, size: 20) : null,
