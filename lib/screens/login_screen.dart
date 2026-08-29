@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
@@ -6,10 +7,77 @@ import '../widgets/app_text_field.dart';
 import '../widgets/mono_tag.dart';
 import '../widgets/status_badge.dart';
 import 'register_screen.dart';
-import 'home_screen.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _loading = false;
+
+  String _messageFor(FirebaseAuthException error) => switch (error.code) {
+    'invalid-email' => 'Informe um e-mail válido.',
+    'invalid-credential' ||
+    'user-not-found' ||
+    'wrong-password' => 'E-mail ou senha incorretos.',
+    'user-disabled' => 'Esta conta foi desativada.',
+    'too-many-requests' => 'Muitas tentativas. Aguarde e tente novamente.',
+    'network-request-failed' => 'Sem conexão. Verifique sua internet.',
+    _ => 'Não foi possível entrar. Tente novamente.',
+  };
+
+  Future<void> _login() async {
+    if (_loading) return;
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    if (email.isEmpty || password.isEmpty) {
+      _show('Preencha o e-mail e a senha.');
+      return;
+    }
+    setState(() => _loading = true);
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+    } on FirebaseAuthException catch (error) {
+      if (mounted) _show(_messageFor(error));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _resetPassword() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      _show('Informe seu e-mail para recuperar a senha.');
+      return;
+    }
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      if (mounted) _show('Enviamos as instruções para o seu e-mail.');
+    } on FirebaseAuthException catch (error) {
+      if (mounted) _show(_messageFor(error));
+    }
+  }
+
+  void _show(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +129,7 @@ class LoginScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'SOCORRO FÁCIL',
+                            'SOPS',
                             style: monoStyle(
                               fontSize: 13,
                               color: primary,
@@ -114,11 +182,12 @@ class LoginScreen extends StatelessWidget {
 
                         const SizedBox(height: 24),
 
-                        const AppTextField(
+                        AppTextField(
                           label: 'E-mail',
                           hint: 'seuemail@exemplo.com',
                           icon: Icons.email_outlined,
                           keyboardType: TextInputType.emailAddress,
+                          controller: _emailController,
                         ),
 
                         const SizedBox(height: 16),
@@ -128,14 +197,18 @@ class LoginScreen extends StatelessWidget {
                           hint: 'Digite sua senha',
                           icon: Icons.lock_outline,
                           obscureText: true,
-                          trailing: Text(
-                            'Esqueci minha senha',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: dark
-                                  ? AppColors.accentCyan
-                                  : AppColors.accentBlue,
+                          controller: _passwordController,
+                          trailing: GestureDetector(
+                            onTap: _loading ? null : _resetPassword,
+                            child: Text(
+                              'Esqueci minha senha',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: dark
+                                    ? AppColors.accentCyan
+                                    : AppColors.accentBlue,
+                              ),
                             ),
                           ),
                         ),
@@ -145,15 +218,16 @@ class LoginScreen extends StatelessWidget {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const HomeScreen(),
-                                ),
-                              );
-                            },
-                            child: const Text('Entrar'),
+                            onPressed: _loading ? null : _login,
+                            child: _loading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text('Entrar'),
                           ),
                         ),
 

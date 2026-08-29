@@ -3,9 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../theme/theme_controller.dart';
+import '../services/user_profile_service.dart';
 import '../widgets/learning_dashboard.dart';
 import 'emergency_screen.dart';
-import 'login_screen.dart';
 import 'learning_journey_screen.dart';
 import 'medical_card_screen.dart';
 import 'profile_screen.dart';
@@ -360,16 +360,7 @@ class _HomeScreenState extends State<HomeScreen> {
               () => _navigate(inDrawer, const SettingsScreen()),
             ),
             Divider(color: _line),
-            _NavTile(
-              Icons.logout,
-              'Sair',
-              _muted,
-              () => Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
-                (_) => false,
-              ),
-            ),
+            _NavTile(Icons.logout, 'Sair', _muted, UserProfileService.signOut),
           ],
         ),
       ),

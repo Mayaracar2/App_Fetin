@@ -5,6 +5,7 @@ import '../theme/app_theme.dart';
 import '../widgets/app_card.dart';
 import '../widgets/app_text_field.dart';
 import '../widgets/mono_tag.dart';
+import '../services/user_profile_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -56,22 +57,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> salvarDados() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    await prefs.setString('nome', nomeController.text);
-    await prefs.setString('sangue', sangueController.text);
-    await prefs.setString('alergias', alergiasController.text);
-    await prefs.setString('medicamentos', medicamentosController.text);
-    await prefs.setString('doencas', doencasController.text);
     final contacts = contatoControllers
         .map((controller) => controller.text.trim())
         .where((contact) => contact.isNotEmpty)
         .toList();
-    await prefs.setStringList('contatos_emergencia', contacts);
-    // Mantém a chave antiga para as telas que exibem os contatos de emergência.
-    await prefs.setString(
-      'contato',
-      contacts.isEmpty ? '' : contacts.join(' · '),
+    await UserProfileService.saveCurrentProfile(
+      nome: nomeController.text,
+      sangue: sangueController.text,
+      alergias: alergiasController.text,
+      medicamentos: medicamentosController.text,
+      doencas: doencasController.text,
+      contatos: contacts,
     );
 
     if (!mounted) return;

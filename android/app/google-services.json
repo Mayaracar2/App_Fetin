@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "608924512048",
+    "project_id": "loginfetin",
+    "storage_bucket": "loginfetin.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:608924512048:android:b5c764ff9e04e5e25c22f5",
+        "android_client_info": {
+          "package_name": "com.example.socorro_facil"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "608924512048-jfa1pcg95mjm3beih5m3mh9cumm40t3p.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBmYrQGT8kE8BK9ifmZ5XcSo5lyoMJJQhI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "608924512048-jfa1pcg95mjm3beih5m3mh9cumm40t3p.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

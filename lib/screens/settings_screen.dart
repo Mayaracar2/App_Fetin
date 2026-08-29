@@ -1,12 +1,13 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
 import '../theme/theme_controller.dart';
-import 'login_screen.dart';
+import '../services/user_profile_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -167,7 +168,7 @@ class _SettingsState extends State<SettingsScreen> {
             tile(
               Icons.support_agent,
               'Falar com o suporte',
-              'suporte@socorrofacil.app',
+              'suporte@sops.app',
               () => open(const SupportScreen()),
             ),
             tile(
@@ -247,12 +248,7 @@ class _SettingsState extends State<SettingsScreen> {
   Future<void> logout() async {
     if (!await confirm('Sair da conta?', 'Você precisará entrar novamente.'))
       return;
-    if (mounted)
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-        (_) => false,
-      );
+    await UserProfileService.signOut();
   }
 
   Future<void> deleteAccount() async {
@@ -297,12 +293,7 @@ class _SettingsState extends State<SettingsScreen> {
     if (!ok) return;
     await (await SharedPreferences.getInstance()).clear();
     await ThemeController.setMode(ThemeMode.light);
-    if (mounted)
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-        (_) => false,
-      );
+    await FirebaseAuth.instance.signOut();
   }
 
   Future<bool> confirm(String a, String b) async =>
@@ -781,7 +772,7 @@ class _SupportState extends State<SupportScreen> {
     title: widget.report ? 'Reportar problema' : 'Falar com o suporte',
     children: [
       const Text(
-        'Descreva sua solicitação. A mensagem ficará pronta para ser enviada a suporte@socorrofacil.app.',
+        'Descreva sua solicitação. A mensagem ficará pronta para ser enviada a suporte@sops.app.',
       ),
       const SizedBox(height: 14),
       TextField(
