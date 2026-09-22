@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'profile_photo.dart';
 
 class EmergencyContact {
   const EmergencyContact({
@@ -194,18 +195,20 @@ class UserProfileService {
     await prefs.setString('profile_photo_uid', user.uid);
     Future<void> cachePhoto(Map<String, dynamic> data) async {
       final savedPhoto = _text(data, [
+        'foto',
         'photoURL',
         'photoUrl',
         'fotoURL',
         'fotoUrl',
-        'foto',
         'avatarUrl',
       ]);
       final remote = savedPhoto.isNotEmpty ? savedPhoto : photo;
       if (remote.isNotEmpty) await prefs.setString('profile_photo', remote);
     }
 
-    await cachePhoto(const {});
+    if ((prefs.getString('profile_photo') ?? '').isEmpty) {
+      await cachePhoto(const {});
+    }
     try {
       final snapshot = await _document(user.uid).get();
       final data = snapshot.data();
@@ -323,6 +326,10 @@ class UserProfileService {
     final user = _auth.currentUser;
     if (user == null) throw StateError('Nenhum usuário autenticado.');
 
+    final persistedPhoto = photo == null || photo.trim().isEmpty
+        ? null
+        : await ProfilePhoto.prepare(photo.trim());
+
     final data = <String, dynamic>{
       'uid': user.uid,
       'nome': nome.trim(),
@@ -330,7 +337,7 @@ class UserProfileService {
       'telefone': telefone.trim(),
       'dataNascimento': nascimento.trim(),
       'cidade': cidade.trim(),
-      if (photo != null && photo.trim().isNotEmpty) 'foto': photo.trim(),
+      if (persistedPhoto != null) 'foto': persistedPhoto,
       'atualizadoEm': FieldValue.serverTimestamp(),
     };
     await _document(user.uid).set(data, SetOptions(merge: true));
@@ -345,8 +352,8 @@ class UserProfileService {
     }.entries) {
       await prefs.setString(entry.key, entry.value);
     }
-    if (photo != null && photo.trim().isNotEmpty) {
-      await prefs.setString('profile_photo', photo.trim());
+    if (persistedPhoto != null) {
+      await prefs.setString('profile_photo', persistedPhoto);
       await prefs.setString('profile_photo_uid', user.uid);
     }
     profileVersion.value++;

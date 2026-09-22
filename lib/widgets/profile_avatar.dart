@@ -27,7 +27,19 @@ class ProfileAvatar extends StatelessWidget {
     final uri = Uri.tryParse(source);
     Widget content = fallback;
     if (source.isNotEmpty) {
-      if (uri?.scheme == 'https' ||
+      if (uri?.scheme == 'data') {
+        try {
+          content = Image.memory(
+            uri!.data!.contentAsBytes(),
+            width: radius * 2,
+            height: radius * 2,
+            fit: BoxFit.cover,
+            errorBuilder: (_, error, stack) => fallback,
+          );
+        } on FormatException {
+          content = fallback;
+        }
+      } else if (uri?.scheme == 'https' ||
           uri?.scheme == 'http' ||
           (kIsWeb && uri?.scheme == 'blob')) {
         content = Image.network(

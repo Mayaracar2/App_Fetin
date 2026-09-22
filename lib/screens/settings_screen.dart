@@ -316,6 +316,7 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditState extends State<EditProfileScreen> {
+  bool _saving = false;
   final f = {
     for (final k in ['nome', 'email', 'telefone', 'nascimento', 'cidade'])
       k: TextEditingController(),
@@ -343,17 +344,30 @@ class _EditState extends State<EditProfileScreen> {
   }
 
   Future<void> save() async {
-    await UserProfileService.saveBasicProfile(
-      nome: f['nome']!.text,
-      email: f['email']!.text,
-      telefone: f['telefone']!.text,
-      nascimento: f['nascimento']!.text,
-      cidade: f['cidade']!.text,
-      photo: photo,
-    );
-    if (mounted) {
-      message(context, 'Perfil atualizado.');
-      Navigator.pop(context);
+    if (_saving) return;
+    setState(() => _saving = true);
+    try {
+      await UserProfileService.saveBasicProfile(
+        nome: f['nome']!.text,
+        email: f['email']!.text,
+        telefone: f['telefone']!.text,
+        nascimento: f['nascimento']!.text,
+        cidade: f['cidade']!.text,
+        photo: photo,
+      );
+      if (mounted) {
+        message(context, 'Perfil atualizado.');
+        Navigator.pop(context);
+      }
+    } catch (_) {
+      if (mounted) {
+        message(
+          context,
+          'Falha ao salvar o perfil. Verifique a conexao e a foto e tente novamente.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -369,7 +383,7 @@ class _EditState extends State<EditProfileScreen> {
               right: 0,
               bottom: 0,
               child: IconButton.filled(
-                onPressed: pick,
+                onPressed: _saving ? null : pick,
                 icon: const Icon(Icons.camera_alt, size: 18),
               ),
             ),
@@ -395,7 +409,7 @@ class _EditState extends State<EditProfileScreen> {
         ),
       const SizedBox(height: 20),
       FilledButton.icon(
-        onPressed: save,
+        onPressed: _saving ? null : save,
         icon: const Icon(Icons.save),
         label: const LocalizedText('Salvar alterações'),
       ),

@@ -317,12 +317,14 @@ class _HomeScreenState extends State<HomeScreen> {
               tooltip: tr(context, 'Meu perfil'),
               onPressed: _openProfile,
               style: IconButton.styleFrom(
+                padding: EdgeInsets.zero,
+                fixedSize: const Size.square(40),
                 backgroundColor: const Color(0xFFEDF7FA),
-                side: const BorderSide(color: Color(0xFFC6DCE6)),
+                shape: const CircleBorder(),
               ),
               icon: ProfileAvatar(
                 photo: _photo,
-                radius: 12,
+                radius: 20,
                 icon: Icons.person_outline,
                 iconColor: _blue,
                 backgroundColor: Colors.transparent,
