@@ -1,6 +1,9 @@
+import 'l10n/localized_text.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'l10n/language_controller.dart';
 
 import 'firebase_options.dart';
 import 'screens/home_screen.dart';
@@ -13,6 +16,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await ThemeController.initialize();
+  await LanguageController.initialize();
   runApp(const SopsApp());
 }
 
@@ -23,13 +27,19 @@ class SopsApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.mode,
-      builder: (context, mode, _) => MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'SOPS',
-        theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
-        themeMode: mode,
-        home: const AuthGate(),
+      builder: (context, mode, _) => ValueListenableBuilder<Locale>(
+        valueListenable: LanguageController.locale,
+        builder: (context, locale, _) => MaterialApp(
+          locale: locale,
+          supportedLocales: LanguageController.supportedLocales,
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          debugShowCheckedModeBanner: false,
+          title: 'SOPS',
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: mode,
+          home: const AuthGate(),
+        ),
       ),
     );
   }
@@ -67,14 +77,14 @@ class AuthGate extends StatelessWidget {
                       children: [
                         const Icon(Icons.cloud_off_outlined, size: 42),
                         const SizedBox(height: 12),
-                        const Text(
+                        const LocalizedText(
                           'Não foi possível carregar os dados da conta.',
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 16),
                         FilledButton(
                           onPressed: UserProfileService.signOut,
-                          child: const Text('Voltar ao login'),
+                          child: const LocalizedText('Voltar ao login'),
                         ),
                       ],
                     ),

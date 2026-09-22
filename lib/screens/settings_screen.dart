@@ -1,8 +1,11 @@
-import 'dart:io';
+import '../l10n/localized_text.dart';
+import '../widgets/section_app_bar.dart';
+import '../l10n/language_controller.dart';
+import '../widgets/profile_avatar.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:local_auth/local_auth.dart';
+
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
@@ -25,6 +28,7 @@ class _SettingsState extends State<SettingsScreen> {
   }
 
   Future<void> load() async {
+    await UserProfileService.syncCurrentUser();
     final p = await SharedPreferences.getInstance();
     if (mounted)
       setState(() {
@@ -46,24 +50,20 @@ class _SettingsState extends State<SettingsScreen> {
     final dark = Theme.of(c).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: dark ? AppColors.bgDark : const Color(0xfff3f8fa),
-      appBar: AppBar(title: const Text('Configurações')),
+      appBar: sectionAppBar('Configurações'),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Card(
             child: ListTile(
               contentPadding: const EdgeInsets.all(14),
-              leading: CircleAvatar(
-                radius: 27,
-                backgroundImage: _image(photo),
-                child: _image(photo) == null ? const Icon(Icons.person) : null,
-              ),
-              title: Text(
+              leading: ProfileAvatar(photo: photo, radius: 27),
+              title: LocalizedText(
                 name,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               subtitle: email.isEmpty
-                  ? const Text('Complete seu perfil')
+                  ? const LocalizedText('Complete seu perfil')
                   : Text(email),
               trailing: const Icon(Icons.edit_outlined),
               onTap: () => open(const EditProfileScreen()),
@@ -81,12 +81,6 @@ class _SettingsState extends State<SettingsScreen> {
               'Alterar senha',
               'Atualize sua senha de acesso',
               () => open(const ChangePasswordScreen()),
-            ),
-            tile(
-              Icons.security,
-              'Segurança',
-              'Biometria, PIN e duas etapas',
-              () => open(const SecurityScreen()),
             ),
           ]),
           section('PREFERÊNCIAS', [
@@ -200,8 +194,6 @@ class _SettingsState extends State<SettingsScreen> {
     );
   }
 
-  ImageProvider? _image(String? p) =>
-      p != null && File(p).existsSync() ? FileImage(File(p)) : null;
   Widget section(String t, List<Widget> x) => Padding(
     padding: const EdgeInsets.only(top: 20),
     child: Column(
@@ -209,7 +201,7 @@ class _SettingsState extends State<SettingsScreen> {
       children: [
         Padding(
           padding: const EdgeInsets.all(6),
-          child: Text(
+          child: LocalizedText(
             t,
             style: TextStyle(
               fontSize: 11,
@@ -234,14 +226,14 @@ class _SettingsState extends State<SettingsScreen> {
     bool danger = false,
   }) => ListTile(
     leading: Icon(i, color: danger ? AppColors.emergencyRed : null),
-    title: Text(
+    title: LocalizedText(
       t,
       style: TextStyle(
         fontWeight: FontWeight.w600,
         color: danger ? AppColors.emergencyRed : null,
       ),
     ),
-    subtitle: Text(s),
+    subtitle: LocalizedText(s),
     trailing: const Icon(Icons.chevron_right),
     onTap: f,
   );
@@ -257,18 +249,18 @@ class _SettingsState extends State<SettingsScreen> {
         await showDialog<bool>(
           context: context,
           builder: (d) => AlertDialog(
-            title: const Text('Excluir conta permanentemente?'),
+            title: const LocalizedText('Excluir conta permanentemente?'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
+                const LocalizedText(
                   'Todos os dados deste dispositivo serão apagados. Esta ação não pode ser desfeita.',
                 ),
                 const SizedBox(height: 14),
                 TextField(
                   controller: ctl,
-                  decoration: const InputDecoration(
-                    labelText: 'Digite EXCLUIR',
+                  decoration: InputDecoration(
+                    labelText: tr(d, 'Digite EXCLUIR'),
                   ),
                 ),
               ],
@@ -276,14 +268,14 @@ class _SettingsState extends State<SettingsScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(d, false),
-                child: const Text('Cancelar'),
+                child: const LocalizedText('Cancelar'),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(
                   d,
-                  ctl.text.trim().toUpperCase() == 'EXCLUIR',
+                  ctl.text.trim().toUpperCase() == tr(d, 'EXCLUIR'),
                 ),
-                child: const Text('Excluir'),
+                child: const LocalizedText('Excluir'),
               ),
             ],
           ),
@@ -300,16 +292,16 @@ class _SettingsState extends State<SettingsScreen> {
       await showDialog<bool>(
         context: context,
         builder: (d) => AlertDialog(
-          title: Text(a),
-          content: Text(b),
+          title: LocalizedText(a),
+          content: LocalizedText(b),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(d, false),
-              child: const Text('Cancelar'),
+              child: const LocalizedText('Cancelar'),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(d, true),
-              child: const Text('Confirmar'),
+              child: const LocalizedText('Confirmar'),
             ),
           ],
         ),
@@ -351,9 +343,14 @@ class _EditState extends State<EditProfileScreen> {
   }
 
   Future<void> save() async {
-    final p = await SharedPreferences.getInstance();
-    for (final e in f.entries) await p.setString(e.key, e.value.text.trim());
-    if (photo != null) await p.setString('profile_photo', photo!);
+    await UserProfileService.saveBasicProfile(
+      nome: f['nome']!.text,
+      email: f['email']!.text,
+      telefone: f['telefone']!.text,
+      nascimento: f['nascimento']!.text,
+      cidade: f['cidade']!.text,
+      photo: photo,
+    );
     if (mounted) {
       message(context, 'Perfil atualizado.');
       Navigator.pop(context);
@@ -367,13 +364,7 @@ class _EditState extends State<EditProfileScreen> {
       Center(
         child: Stack(
           children: [
-            CircleAvatar(
-              radius: 48,
-              backgroundImage: photo != null && File(photo!).existsSync()
-                  ? FileImage(File(photo!))
-                  : null,
-              child: photo == null ? const Icon(Icons.person, size: 40) : null,
-            ),
+            ProfileAvatar(photo: photo, radius: 48, iconSize: 40),
             Positioned(
               right: 0,
               bottom: 0,
@@ -397,7 +388,7 @@ class _EditState extends State<EditProfileScreen> {
           child: TextField(
             controller: f[x.$2],
             decoration: InputDecoration(
-              labelText: x.$1,
+              labelText: tr(context, x.$1),
               prefixIcon: Icon(x.$3),
             ),
           ),
@@ -406,7 +397,7 @@ class _EditState extends State<EditProfileScreen> {
       FilledButton.icon(
         onPressed: save,
         icon: const Icon(Icons.save),
-        label: const Text('Salvar alterações'),
+        label: const LocalizedText('Salvar alterações'),
       ),
     ],
   );
@@ -448,7 +439,7 @@ class _PasswordState extends State<ChangePasswordScreen> {
   Widget build(BuildContext c) => Page(
     title: 'Alterar senha',
     children: [
-      const Text(
+      const LocalizedText(
         'Use pelo menos 8 caracteres, combinando letras, números e símbolos.',
       ),
       for (final x in [
@@ -462,13 +453,16 @@ class _PasswordState extends State<ChangePasswordScreen> {
             controller: x.$2,
             obscureText: true,
             decoration: InputDecoration(
-              labelText: x.$1,
+              labelText: tr(context, x.$1),
               prefixIcon: const Icon(Icons.lock_outline),
             ),
           ),
         ),
       const SizedBox(height: 20),
-      FilledButton(onPressed: save, child: const Text('Alterar senha')),
+      FilledButton(
+        onPressed: save,
+        child: const LocalizedText('Alterar senha'),
+      ),
     ],
   );
 }
@@ -494,8 +488,7 @@ class _ToggleState extends State<ToggleScreen> {
     if (mounted)
       setState(() {
         for (final k in widget.options.keys)
-          values[k] =
-              p.getBool(k) ?? k.contains('security') || k.contains('emergency');
+          values[k] = p.getBool(k) ?? k.contains('emergency');
       });
   }
 
@@ -506,7 +499,7 @@ class _ToggleState extends State<ToggleScreen> {
       for (final e in widget.options.entries)
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
-          title: Text(e.value),
+          title: LocalizedText(e.value),
           value: values[e.key] ?? false,
           onChanged: (v) async {
             setState(() => values[e.key] = v);
@@ -532,7 +525,7 @@ class ThemeScreen extends StatelessWidget {
           RadioListTile<ThemeMode>(
             value: x.$1,
             groupValue: v,
-            title: Text(x.$2),
+            title: LocalizedText(x.$2),
             secondary: Icon(x.$3),
             onChanged: (n) {
               if (n != null) ThemeController.setMode(n);
@@ -563,7 +556,7 @@ class _LanguageState extends State<LanguageScreen> {
   Widget build(BuildContext c) => Page(
     title: 'Idioma',
     children: [
-      const Text('Escolha o idioma de preferência do aplicativo.'),
+      const LocalizedText('Escolha o idioma de preferência do aplicativo.'),
       for (final x in [
         ('pt_BR', 'Português (Brasil)'),
         ('en_US', 'English'),
@@ -572,105 +565,13 @@ class _LanguageState extends State<LanguageScreen> {
         RadioListTile<String>(
           value: x.$1,
           groupValue: v,
-          title: Text(x.$2),
+          title: LocalizedText(x.$2),
           onChanged: (n) async {
             if (n == null) return;
             setState(() => v = n);
-            await (await SharedPreferences.getInstance()).setString(
-              'language',
-              n,
-            );
+            await LanguageController.setLanguage(n);
           },
         ),
-    ],
-  );
-}
-
-class SecurityScreen extends StatefulWidget {
-  const SecurityScreen({super.key});
-  @override
-  State<SecurityScreen> createState() => _SecurityState();
-}
-
-class _SecurityState extends State<SecurityScreen> {
-  bool bio = false, two = false;
-  final pin = TextEditingController();
-  @override
-  void initState() {
-    super.initState();
-    SharedPreferences.getInstance().then((p) {
-      if (mounted)
-        setState(() {
-          bio = p.getBool('security_biometric') ?? false;
-          two = p.getBool('security_2fa') ?? false;
-        });
-    });
-  }
-
-  Future<void> setBio(bool v) async {
-    if (v) {
-      try {
-        if (!await LocalAuthentication().authenticate(
-          localizedReason: 'Confirme sua identidade para ativar a biometria',
-        ))
-          return;
-      } catch (_) {
-        if (mounted) message(context, 'Biometria indisponível.');
-        return;
-      }
-    }
-    setState(() => bio = v);
-    await (await SharedPreferences.getInstance()).setBool(
-      'security_biometric',
-      v,
-    );
-  }
-
-  Future<void> savePin() async {
-    if (!RegExp(r'^\d{4,6}$').hasMatch(pin.text)) {
-      message(context, 'Use um PIN de 4 a 6 números.');
-      return;
-    }
-    await (await SharedPreferences.getInstance()).setString(
-      'security_pin',
-      pin.text,
-    );
-    pin.clear();
-    if (mounted) message(context, 'PIN salvo.');
-  }
-
-  @override
-  Widget build(BuildContext c) => Page(
-    title: 'Segurança',
-    children: [
-      SwitchListTile(
-        contentPadding: EdgeInsets.zero,
-        title: const Text('Acesso com biometria'),
-        value: bio,
-        onChanged: setBio,
-      ),
-      SwitchListTile(
-        contentPadding: EdgeInsets.zero,
-        title: const Text('Autenticação em duas etapas'),
-        subtitle: const Text('Exigir uma segunda verificação ao entrar'),
-        value: two,
-        onChanged: (v) async {
-          setState(() => two = v);
-          await (await SharedPreferences.getInstance()).setBool(
-            'security_2fa',
-            v,
-          );
-        },
-      ),
-      const Divider(),
-      TextField(
-        controller: pin,
-        obscureText: true,
-        keyboardType: TextInputType.number,
-        maxLength: 6,
-        decoration: const InputDecoration(labelText: 'PIN de segurança'),
-      ),
-      FilledButton.tonal(onPressed: savePin, child: const Text('Definir PIN')),
     ],
   );
 }
@@ -704,12 +605,14 @@ class _PermissionsState extends State<PermissionsScreen> {
   Widget build(BuildContext c) => Page(
     title: 'Permissões',
     children: [
-      const Text('As permissões são solicitadas apenas quando necessárias.'),
+      const LocalizedText(
+        'As permissões são solicitadas apenas quando necessárias.',
+      ),
       for (final e in ps.entries)
         ListTile(
           contentPadding: EdgeInsets.zero,
-          title: Text(e.key),
-          subtitle: Text(
+          title: LocalizedText(e.key),
+          subtitle: LocalizedText(
             st[e.key]?.isGranted == true ? 'Permitida' : 'Não permitida',
           ),
           trailing: OutlinedButton(
@@ -718,7 +621,7 @@ class _PermissionsState extends State<PermissionsScreen> {
               if (s.isPermanentlyDenied) await openAppSettings();
               refresh();
             },
-            child: Text(
+            child: LocalizedText(
               st[e.key]?.isGranted == true ? 'Gerenciar' : 'Permitir',
             ),
           ),
@@ -746,11 +649,11 @@ class FaqScreen extends StatelessWidget {
       ])
         ExpansionTile(
           tilePadding: EdgeInsets.zero,
-          title: Text(x.$1),
+          title: LocalizedText(x.$1),
           children: [
             Padding(
               padding: const EdgeInsets.only(bottom: 14),
-              child: Text(x.$2),
+              child: LocalizedText(x.$2),
             ),
           ],
         ),
@@ -771,7 +674,7 @@ class _SupportState extends State<SupportScreen> {
   Widget build(BuildContext c) => Page(
     title: widget.report ? 'Reportar problema' : 'Falar com o suporte',
     children: [
-      const Text(
+      const LocalizedText(
         'Descreva sua solicitação. A mensagem ficará pronta para ser enviada a suporte@sops.app.',
       ),
       const SizedBox(height: 14),
@@ -780,9 +683,10 @@ class _SupportState extends State<SupportScreen> {
         minLines: 5,
         maxLines: 8,
         decoration: InputDecoration(
-          labelText: widget.report
-              ? 'O que aconteceu?'
-              : 'Como podemos ajudar?',
+          labelText: tr(
+            context,
+            widget.report ? 'O que aconteceu?' : 'Como podemos ajudar?',
+          ),
           alignLabelWithHint: true,
         ),
       ),
@@ -797,7 +701,7 @@ class _SupportState extends State<SupportScreen> {
           text.clear();
         },
         icon: const Icon(Icons.send),
-        label: const Text('Enviar'),
+        label: const LocalizedText('Enviar'),
       ),
     ],
   );
@@ -812,7 +716,7 @@ class Page extends StatelessWidget {
     final dark = Theme.of(c).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: dark ? AppColors.bgDark : const Color(0xfff3f8fa),
-      appBar: AppBar(title: Text(title)),
+      appBar: AppBar(title: LocalizedText(title)),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -837,4 +741,4 @@ class Page extends StatelessWidget {
 }
 
 void message(BuildContext c, String s) =>
-    ScaffoldMessenger.of(c).showSnackBar(SnackBar(content: Text(s)));
+    ScaffoldMessenger.of(c).showSnackBar(SnackBar(content: LocalizedText(s)));

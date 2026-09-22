@@ -1,3 +1,4 @@
+import '../l10n/localized_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -43,16 +44,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
           .createUserWithEmailAndPassword(email: email, password: password);
       final user = credential.user!;
       await user.updateDisplayName(name);
-      await FirebaseFirestore.instance
-          .collection('usuarios')
-          .doc(user.uid)
-          .set({
-            'uid': user.uid,
-            'nome': name,
-            'email': email,
-            'criadoEm': FieldValue.serverTimestamp(),
-            'atualizadoEm': FieldValue.serverTimestamp(),
-          });
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'uid': user.uid,
+        'nome': name,
+        'email': email,
+        'criadoEm': FieldValue.serverTimestamp(),
+        'atualizadoEm': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
       if (mounted) Navigator.pop(context);
     } on FirebaseAuthException catch (error) {
       final message = switch (error.code) {
@@ -71,7 +69,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _show(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+      ..showSnackBar(SnackBar(content: LocalizedText(message)));
   }
 
   @override
@@ -91,7 +89,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       backgroundColor: dark ? AppColors.bgDark : const Color(0xFFF3F8FA),
       appBar: AppBar(
-        title: Text(
+        title: LocalizedText(
           'CRIAR CONTA',
           style: monoStyle(fontSize: 12, color: primary),
         ),
@@ -109,7 +107,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   children: [
                     const MonoTag('Novo cadastro'),
                     const SizedBox(height: 8),
-                    Text(
+                    LocalizedText(
                       'Criar minha conta',
                       style: TextStyle(
                         fontSize: 22,
@@ -118,7 +116,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
+                    LocalizedText(
                       'Leva menos de um minuto.',
                       style: TextStyle(fontSize: 13, color: secondary),
                     ),
@@ -173,7 +171,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Text('Cadastrar'),
+                            : const LocalizedText('Cadastrar'),
                       ),
                     ),
                   ],

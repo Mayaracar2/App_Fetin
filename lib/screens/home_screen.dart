@@ -1,3 +1,9 @@
+import '../l10n/localized_text.dart';
+import '../l10n/language_controller.dart';
+import '../widgets/profile_avatar.dart';
+import 'dart:async';
+import '../services/learning_progress_service.dart';
+import '../widgets/app_logo.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -115,8 +121,19 @@ class _HomeScreenState extends State<HomeScreen> {
   final _scrollController = ScrollController();
   final _searchController = TextEditingController();
   String _name = 'Usuário';
+  StreamSubscription<Map<int, int>>? _progressSubscription;
+  double? _overallProgress;
+  bool _progressError = false;
+  String _email = 'Não informado';
+  String _phone = 'Não informado';
+  String _birthDate = 'Não informado';
+  String _city = 'Não informado';
   String _blood = 'Não informado';
   String _allergies = 'Não informado';
+  String? _photo;
+  String _medications = 'Não informado';
+  String _conditions = 'Não informado';
+  String _emergencyContacts = 'Não informado';
   String _category = 'Todos';
   String _query = '';
   bool _isDarkMode = false;
@@ -132,7 +149,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<_Lesson> get _visibleLessons => _lessons.where((lesson) {
     return (_category == 'Todos' || lesson.category == _category) &&
-        lesson.title.toLowerCase().contains(_query.trim().toLowerCase());
+        LanguageController.translate(
+          lesson.title,
+        ).toLowerCase().contains(_query.trim().toLowerCase());
   }).toList();
 
   @override
@@ -140,7 +159,20 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _isDarkMode = ThemeController.mode.value == ThemeMode.dark;
     ThemeController.mode.addListener(_syncTheme);
+    UserProfileService.profileVersion.addListener(_loadProfile);
     _loadProfile();
+    _progressSubscription = LearningProgressService.watch().listen(
+      (progress) {
+        if (!mounted) return;
+        setState(() {
+          _overallProgress = LearningProgressService.overallProgress(progress);
+          _progressError = false;
+        });
+      },
+      onError: (Object error) {
+        if (mounted) setState(() => _progressError = true);
+      },
+    );
   }
 
   void _syncTheme() {
@@ -154,6 +186,14 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       final savedName = prefs.getString('nome')?.trim();
       _name = savedName == null || savedName.isEmpty ? 'Usuário' : savedName;
+      _photo = prefs.getString('profile_photo');
+      _email = _read(prefs, 'email');
+      _phone = _read(prefs, 'telefone');
+      _birthDate = _read(prefs, 'nascimento');
+      _city = _read(prefs, 'cidade');
+      _medications = _read(prefs, 'medicamentos');
+      _conditions = _read(prefs, 'doencas');
+      _emergencyContacts = _read(prefs, 'contato');
       _blood = _read(prefs, 'sangue');
       _allergies = _read(prefs, 'alergias');
     });
@@ -164,8 +204,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return value == null || value.isEmpty ? 'Não informado' : value;
   }
 
-  void _open(Widget screen) =>
-      Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+  Future<void> _open(Widget screen) async {
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+    await _loadProfile();
+  }
 
   Future<void> _openProfile() async {
     await Navigator.push(
@@ -177,7 +219,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    _progressSubscription?.cancel();
     ThemeController.mode.removeListener(_syncTheme);
+    UserProfileService.profileVersion.removeListener(_loadProfile);
     _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
@@ -262,7 +306,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  Text(
+                  LocalizedText(
                     'Perfil de usuário',
                     style: TextStyle(color: _secondaryText, fontSize: 10),
                   ),
@@ -270,17 +314,23 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             const SizedBox(width: 9),
             IconButton(
-              tooltip: 'Meu perfil',
+              tooltip: tr(context, 'Meu perfil'),
               onPressed: _openProfile,
               style: IconButton.styleFrom(
                 backgroundColor: const Color(0xFFEDF7FA),
                 side: const BorderSide(color: Color(0xFFC6DCE6)),
               ),
-              icon: const Icon(Icons.person_outline, color: _blue),
+              icon: ProfileAvatar(
+                photo: _photo,
+                radius: 12,
+                icon: Icons.person_outline,
+                iconColor: _blue,
+                backgroundColor: Colors.transparent,
+              ),
             ),
             const SizedBox(width: 4),
             IconButton(
-              tooltip: 'Abrir menu',
+              tooltip: tr(context, 'Abrir menu'),
               onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
               icon: Icon(Icons.menu_rounded, color: _primaryText, size: 27),
             ),
@@ -379,7 +429,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Icon(Icons.favorite_outline, color: _green, size: 18),
                 SizedBox(width: 7),
-                Text(
+                LocalizedText(
                   'INFORMAÇÕES ESSENCIAIS',
                   style: TextStyle(
                     color: _green,
@@ -392,9 +442,12 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 12),
             _sidebarData('Tipo sanguíneo', _blood),
             _sidebarData('Alergias', _allergies),
+            _sidebarData('Medicamento em uso', _medications),
+            _sidebarData('Condições de saúde', _conditions),
+            _sidebarData('Contato de emergência', _emergencyContacts),
             TextButton(
               onPressed: _openProfile,
-              child: const Text('Ver perfil de saúde'),
+              child: const LocalizedText('Ver perfil de saúde'),
             ),
           ],
         ),
@@ -418,9 +471,11 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Row(
           children: [
-            const CircleAvatar(
-              backgroundColor: Color(0xFFE6F5F9),
-              child: Icon(Icons.person_outline, color: _blue),
+            ProfileAvatar(
+              photo: _photo,
+              backgroundColor: const Color(0xFFE6F5F9),
+              icon: Icons.person_outline,
+              iconColor: _blue,
             ),
             const SizedBox(width: 11),
             Expanded(
@@ -430,15 +485,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     _name,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: _navy,
+                    style: TextStyle(
+                      color: _primaryText,
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  Text(
+                  LocalizedText(
                     'Aluno da trilha de cuidados',
-                    style: TextStyle(color: _secondaryText, fontSize: 10),
+                    style: TextStyle(
+                      color: _secondaryText,
+                      fontSize: 10,
+                    ),
                   ),
                 ],
               ),
@@ -446,21 +504,23 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         const SizedBox(height: 15),
-        const Row(
+        Row(
           children: [
-            Text(
+            LocalizedText(
               'Progresso geral',
               style: TextStyle(
-                color: _muted,
+                color: _secondaryText,
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
               ),
             ),
-            Spacer(),
-            Text(
-              '41%',
+            const Spacer(),
+            LocalizedText(
+              _overallProgress == null
+                  ? '—'
+                  : '${(_overallProgress! * 100).floor()}%',
               style: TextStyle(
-                color: _blue,
+                color: _primaryText,
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
               ),
@@ -468,28 +528,37 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         const SizedBox(height: 7),
-        const LinearProgressIndicator(
-          value: .41,
+        LinearProgressIndicator(
+          value: _overallProgress ?? (_progressError ? 0 : null),
           minHeight: 6,
-          backgroundColor: Color(0xFFDCEBF0),
+          backgroundColor: _line,
           color: _green,
           borderRadius: BorderRadius.all(Radius.circular(6)),
         ),
-        const SizedBox(height: 12),
-        const Row(
-          children: [
-            Icon(
-              Icons.workspace_premium_outlined,
-              color: Color(0xFFD99231),
-              size: 17,
+        if (_progressError)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: LocalizedText(
+              'Não foi possível atualizar o progresso.',
+              style: TextStyle(color: _secondaryText, fontSize: 10),
             ),
-            SizedBox(width: 6),
-            Text(
-              'Meta semanal: 2/3 aulas',
-              style: TextStyle(color: _muted, fontSize: 10),
-            ),
-          ],
-        ),
+          ),
+        const SizedBox(height: 0),
+        if (false)
+          const Row(
+            children: [
+              Icon(
+                Icons.workspace_premium_outlined,
+                color: Color(0xFFD99231),
+                size: 17,
+              ),
+              SizedBox(width: 6),
+              LocalizedText(
+                'Meta semanal: 2/3 aulas',
+                style: TextStyle(color: _muted, fontSize: 10),
+              ),
+            ],
+          ),
       ],
     ),
   );
@@ -503,21 +572,23 @@ class _HomeScreenState extends State<HomeScreen> {
     ],
   );
   Widget _sidebarData(String label, String value) => Padding(
-    padding: const EdgeInsets.only(bottom: 8),
-    child: Row(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(label, style: TextStyle(color: _secondaryText, fontSize: 10)),
-        const Spacer(),
-        Flexible(
-          child: Text(
-            value,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.right,
-            style: const TextStyle(
-              color: Color(0xFF315F50),
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-            ),
+        LocalizedText(
+          label,
+          style: TextStyle(color: _secondaryText, fontSize: 10),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          profileText(context, value),
+          softWrap: true,
+          style: TextStyle(
+            color: _primaryText,
+            fontSize: 12,
+            height: 1.4,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
@@ -552,12 +623,12 @@ class _HomeScreenState extends State<HomeScreen> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        const LocalizedText(
           'TRILHA DE APRENDIZAGEM',
           style: TextStyle(color: _blue, fontSize: 11, letterSpacing: 1.3),
         ),
         const SizedBox(height: 9),
-        Text(
+        LocalizedText(
           'Olá, ${_name.split(' ').first}! Vamos aprender?',
           style: TextStyle(
             color: _primaryText,
@@ -567,7 +638,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         const SizedBox(height: 9),
-        Text(
+        LocalizedText(
           'Conteúdos rápidos para agir com mais segurança em situações reais.',
           style: TextStyle(color: _secondaryText, fontSize: 13),
         ),
@@ -642,7 +713,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final title = const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          LocalizedText(
             'Biblioteca de primeiros socorros',
             style: TextStyle(
               color: _navy,
@@ -651,7 +722,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           SizedBox(height: 4),
-          Text(
+          LocalizedText(
             'Escolha uma categoria ou encontre um tema.',
             style: TextStyle(color: _muted, fontSize: 12),
           ),
@@ -664,7 +735,7 @@ class _HomeScreenState extends State<HomeScreen> {
           onChanged: (value) => setState(() => _query = value),
           style: const TextStyle(color: _navy),
           decoration: InputDecoration(
-            hintText: 'Buscar aula',
+            hintText: tr(context, 'Buscar aula'),
             prefixIcon: const Icon(Icons.search, color: _muted),
             filled: true,
             fillColor: Colors.white,
@@ -700,7 +771,7 @@ class _HomeScreenState extends State<HomeScreen> {
             (category) => Padding(
               padding: const EdgeInsets.only(right: 8),
               child: ChoiceChip(
-                label: Text(category),
+                label: LocalizedText(category),
                 selected: category == _category,
                 showCheckmark: false,
                 onSelected: (_) => setState(() => _category = category),
@@ -731,7 +802,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(40),
-          child: Text(
+          child: LocalizedText(
             'Nenhuma aula encontrada.',
             style: TextStyle(color: _muted),
           ),
@@ -773,29 +844,13 @@ class _Brand extends StatelessWidget {
   Widget build(BuildContext context) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      Container(
-        width: 36,
-        height: 36,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: _red,
-          borderRadius: BorderRadius.circular(9),
-        ),
-        child: const Text(
-          '+',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
+      const AppLogo(size: 36),
       const SizedBox(width: 10),
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
+          LocalizedText(
             'SOPS 2.0',
             style: GoogleFonts.ibmPlexMono(
               color: dark ? const Color(0xFFE6F4FF) : _navy,
@@ -804,7 +859,7 @@ class _Brand extends StatelessWidget {
               letterSpacing: 1,
             ),
           ),
-          const Text(
+          const LocalizedText(
             'Educação em primeiros socorros',
             style: TextStyle(color: Color(0xFF5D879A), fontSize: 9),
           ),
@@ -826,7 +881,7 @@ class _NavTile extends StatelessWidget {
     dense: true,
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
     leading: Icon(icon, color: color, size: 19),
-    title: Text(
+    title: LocalizedText(
       title,
       style: TextStyle(
         color: color,
@@ -877,7 +932,7 @@ class _ActionCard extends StatelessWidget {
           children: [
             Icon(icon, color: filled ? Colors.white : color, size: 22),
             const Spacer(),
-            Text(
+            LocalizedText(
               title,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -890,7 +945,7 @@ class _ActionCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            Text(
+            LocalizedText(
               subtitle,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -962,7 +1017,7 @@ class _LessonCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  LocalizedText(
                     lesson.category.toUpperCase(),
                     style: GoogleFonts.ibmPlexMono(
                       color: _blue,
@@ -971,7 +1026,7 @@ class _LessonCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 7),
-                  Text(
+                  LocalizedText(
                     lesson.title,
                     style: const TextStyle(
                       color: _navy,
@@ -985,12 +1040,12 @@ class _LessonCard extends StatelessWidget {
                     children: [
                       const Icon(Icons.schedule, color: _muted, size: 14),
                       const SizedBox(width: 5),
-                      Text(
+                      LocalizedText(
                         '${lesson.duration} · ${lesson.level}',
                         style: const TextStyle(color: _muted, fontSize: 10),
                       ),
                       const Spacer(),
-                      Text(
+                      LocalizedText(
                         '${lesson.progress}%',
                         style: const TextStyle(
                           color: _blue,

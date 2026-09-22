@@ -1,3 +1,4 @@
+import '../l10n/localized_text.dart';
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
@@ -61,7 +62,7 @@ class _StatusBadgeState extends State<StatusBadge>
             ),
           ),
           const SizedBox(width: 6),
-          Text(
+          LocalizedText(
             widget.label,
             style: monoStyle(fontSize: 10, color: widget.color),
           ),

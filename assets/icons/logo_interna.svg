@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#f7f7f7"/>
+
+  <!-- Rounded red app tile -->
+  <rect x="32" y="32" width="448" height="448" rx="101" fill="#ec3645"/>
+
+  <!-- Soft medical cross behind pulse -->
+  <g fill="#ffffff" opacity="0.27">
+    <rect x="236" y="136" width="40" height="240" rx="10"/>
+    <rect x="136" y="236" width="240" height="40" rx="10"/>
+  </g>
+
+  <!-- Heartbeat / ECG line -->
+  <path d="M110 256
+           H183
+           C191 256 195 251 198 244
+           L207 218
+           L219 182
+           C222 173 228 168 235 168
+           C244 168 249 175 251 185
+           L265 315
+           C267 327 273 335 281 335
+           C289 335 294 329 298 319
+           L317 267
+           L330 229
+           C333 220 339 215 347 215
+           C353 215 358 218 363 224
+           L387 256
+           H402"
+        fill="none"
+        stroke="#ffffff"
+        stroke-width="31"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        transform="translate(-35.84,4.5) scale(1.14,1)"/>
+</svg>

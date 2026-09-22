@@ -1,4 +1,6 @@
+import '../l10n/localized_text.dart';
 import 'package:flutter/material.dart';
+import '../l10n/language_controller.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 
@@ -31,7 +33,7 @@ class AppTextField extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
+            LocalizedText(
               label.toUpperCase(),
               style: monoStyle(
                 fontSize: 10,
@@ -50,7 +52,7 @@ class AppTextField extends StatelessWidget {
             color: dark ? AppColors.textSecondary : const Color(0xFF183B50),
           ),
           decoration: InputDecoration(
-            hintText: hint,
+            hintText: hint == null ? null : tr(context, hint!),
             prefixIcon: icon != null ? Icon(icon, size: 20) : null,
           ),
         ),

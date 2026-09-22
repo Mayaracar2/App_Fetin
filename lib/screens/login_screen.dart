@@ -1,3 +1,5 @@
+import '../l10n/localized_text.dart';
+import '../widgets/app_logo.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
@@ -69,7 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void _show(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+      ..showSnackBar(SnackBar(content: LocalizedText(message)));
   }
 
   @override
@@ -99,36 +101,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: AppColors.emergencyRed,
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.emergencyRed.withValues(
-                                alpha: 0.35,
-                              ),
-                              blurRadius: 18,
-                            ),
-                          ],
-                        ),
-                        alignment: Alignment.center,
-                        child: const Text(
-                          '+',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                      const AppLogo(size: 40),
                       const SizedBox(width: 12),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          LocalizedText(
                             'SOPS',
                             style: monoStyle(
                               fontSize: 13,
@@ -136,7 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               letterSpacing: 1.2,
                             ),
                           ),
-                          Text(
+                          LocalizedText(
                             'Perfil de saúde de emergência',
                             style: monoStyle(
                               fontSize: 9,
@@ -166,7 +144,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        Text(
+                        LocalizedText(
                           'Acessar minha conta',
                           style: TextStyle(
                             fontSize: 22,
@@ -175,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text(
+                        LocalizedText(
                           'Use suas credenciais para continuar.',
                           style: TextStyle(fontSize: 13, color: secondary),
                         ),
@@ -200,7 +178,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           controller: _passwordController,
                           trailing: GestureDetector(
                             onTap: _loading ? null : _resetPassword,
-                            child: Text(
+                            child: LocalizedText(
                               'Esqueci minha senha',
                               style: TextStyle(
                                 fontSize: 11,
@@ -227,7 +205,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       strokeWidth: 2,
                                     ),
                                   )
-                                : const Text('Entrar'),
+                                : const LocalizedText('Entrar'),
                           ),
                         ),
 
@@ -246,7 +224,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 10,
                               ),
-                              child: Text('ou', style: monoStyle(fontSize: 9)),
+                              child: LocalizedText(
+                                'ou',
+                                style: monoStyle(fontSize: 9),
+                              ),
                             ),
                             Expanded(
                               child: Divider(
@@ -270,7 +251,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               );
                             },
-                            child: const Text(
+                            child: const LocalizedText(
                               'Não tenho conta. Criar cadastro',
                             ),
                           ),

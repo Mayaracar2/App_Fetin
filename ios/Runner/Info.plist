@@ -36,8 +36,6 @@
 	<string>O microfone pode ser usado em recursos de assistencia.</string>
 	<key>NSContactsUsageDescription</key>
 	<string>Seus contatos podem ser usados como contatos de emergencia.</string>
-	<key>NSFaceIDUsageDescription</key>
-	<string>O Face ID protege o acesso aos seus dados de saude.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

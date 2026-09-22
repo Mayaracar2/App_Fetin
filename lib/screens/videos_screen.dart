@@ -1,31 +1,21 @@
+import '../l10n/localized_text.dart';
+import '../l10n/language_controller.dart';
+import '../widgets/section_app_bar.dart';
+import '../services/learning_progress_service.dart';
+import 'dart:async';
+import '../data/first_aid_videos.dart';
+import 'video_player_screen.dart';
+import '../widgets/app_logo.dart';
+import '../widgets/continue_learning_card.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 const _navy = Color(0xFF17354B);
-const _deepNavy = Color(0xFF0D2E47);
 const _blue = Color(0xFF217BA5);
 const _muted = Color(0xFF5F7D8F);
 const _background = Color(0xFFF4F9FC);
 const _border = Color(0xFFC9DCE7);
 bool _videosDark = false;
-
-class _FirstAidVideo {
-  const _FirstAidVideo({
-    required this.title,
-    required this.description,
-    required this.duration,
-    required this.category,
-    required this.icon,
-    required this.color,
-  });
-
-  final String title;
-  final String description;
-  final String duration;
-  final String category;
-  final IconData icon;
-  final Color color;
-}
 
 class VideosScreen extends StatefulWidget {
   const VideosScreen({super.key});
@@ -35,95 +25,76 @@ class VideosScreen extends StatefulWidget {
 }
 
 class _VideosScreenState extends State<VideosScreen> {
-  static const _videos = [
-    _FirstAidVideo(
-      title: 'Engasgo: como agir nos primeiros minutos',
-      description:
-          'Aprenda a reconhecer uma obstrução e realizar as manobras corretas.',
-      duration: '6 min',
-      category: 'Essencial',
-      icon: Icons.air_rounded,
-      color: Color(0xFF0D5D82),
-    ),
-    _FirstAidVideo(
-      title: 'RCP: reconheça e inicie o atendimento',
-      description: 'Reanimação cardiopulmonar explicada passo a passo.',
-      duration: '12 min',
-      category: 'Fundamental',
-      icon: Icons.favorite_outline_rounded,
-      color: Color(0xFFA33B48),
-    ),
-    _FirstAidVideo(
-      title: 'Queimaduras: condutas seguras em casa',
-      description: 'Cuidados iniciais e atitudes que devem ser evitadas.',
-      duration: '8 min',
-      category: 'Básico',
-      icon: Icons.local_fire_department_outlined,
-      color: Color(0xFFA36B1B),
-    ),
-    _FirstAidVideo(
-      title: 'Desmaio: como proteger a vítima',
-      description: 'Saiba como posicionar e acompanhar uma pessoa desacordada.',
-      duration: '7 min',
-      category: 'Básico',
-      icon: Icons.airline_seat_flat_outlined,
-      color: Color(0xFF517A92),
-    ),
-    _FirstAidVideo(
-      title: 'Hemorragia: controle de sangramentos',
-      description: 'Técnicas seguras para controlar sangramentos externos.',
-      duration: '5 min',
-      category: 'Essencial',
-      icon: Icons.bloodtype_outlined,
-      color: Color(0xFFB23A48),
-    ),
-    _FirstAidVideo(
-      title: 'Fraturas: cuidados até o socorro chegar',
-      description: 'Como imobilizar e evitar o agravamento da lesão.',
-      duration: '9 min',
-      category: 'Fundamental',
-      icon: Icons.healing_outlined,
-      color: Color(0xFF476B5D),
-    ),
-  ];
+  static const _videos = firstAidVideos;
 
   final _searchController = TextEditingController();
   String _query = '';
   String _category = 'Todos';
+  Map<int, int> _progress = {};
+  StreamSubscription<Map<int, int>>? _progressSubscription;
 
-  List<String> get _categories => const [
+  @override
+  void initState() {
+    super.initState();
+    _progressSubscription = LearningProgressService.watch().listen(
+      (values) {
+        if (mounted) setState(() => _progress = values);
+      },
+      onError: (Object error) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: LocalizedText(
+              'Não foi possível carregar o progresso dos vídeos.',
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  List<String> get _categories => [
     'Todos',
-    'Essencial',
-    'Fundamental',
-    'Básico',
+    ..._videos.map((video) => video.category).toSet(),
   ];
 
-  List<_FirstAidVideo> get _filteredVideos {
+  List<FirstAidVideo> get _filteredVideos {
     final normalizedQuery = _query.trim().toLowerCase();
     return _videos.where((video) {
-      final matchesCategory =
-          _category == 'Todos' || video.category == _category;
       final matchesQuery =
           normalizedQuery.isEmpty ||
-          video.title.toLowerCase().contains(normalizedQuery) ||
-          video.description.toLowerCase().contains(normalizedQuery) ||
-          video.category.toLowerCase().contains(normalizedQuery);
-      return matchesCategory && matchesQuery;
+          LanguageController.translate(
+            video.title,
+          ).toLowerCase().contains(normalizedQuery) ||
+          LanguageController.translate(
+            video.description,
+          ).toLowerCase().contains(normalizedQuery) ||
+          LanguageController.translate(
+            video.category,
+          ).toLowerCase().contains(normalizedQuery);
+      return matchesQuery &&
+          (_category == 'Todos' || video.category == _category);
     }).toList();
   }
 
   @override
   void dispose() {
+    _progressSubscription?.cancel();
     _searchController.dispose();
     super.dispose();
   }
 
-  void _openVideo(_FirstAidVideo video) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => _VideoDetails(video: video),
+  void _openVideo(FirstAidVideo video) {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => VideoPlayerScreen(
+          video: video,
+          resumeProgress: (_progress[_videos.indexOf(video) + 1] ?? 0) < 100
+              ? (_progress[_videos.indexOf(video) + 1] ?? 0)
+              : 0,
+        ),
+      ),
     );
   }
 
@@ -133,58 +104,24 @@ class _VideosScreenState extends State<VideosScreen> {
     final videos = _filteredVideos;
     final page = Scaffold(
       backgroundColor: _videosDark ? const Color(0xFF071522) : _background,
-      appBar: AppBar(
-        backgroundColor: _videosDark
-            ? const Color(0xFF071522)
-            : const Color(0xFFF9FCFE),
-        foregroundColor: _videosDark ? const Color(0xFFE6F4FF) : _navy,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(height: 1, color: Color(0xFF294E6B)),
-        ),
-        title: Row(
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE5484D),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Text(
-                '+',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              'TREINAMENTOS',
-              style: GoogleFonts.ibmPlexMono(
-                color: _navy,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1,
-              ),
-            ),
-          ],
-        ),
+      appBar: sectionAppBar(
+        'Biblioteca de primeiros socorros',
+        logo: const AppLogo(size: 34),
       ),
       body: CustomScrollView(
         slivers: [
-          SliverToBoxAdapter(child: _header()),
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(20, 20, 20, 0),
+              child: ContinueLearningCard(),
+            ),
+          ),
           SliverToBoxAdapter(child: _filters()),
           if (videos.isEmpty)
             SliverFillRemaining(hasScrollBody: false, child: _emptyState())
           else
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 6, 20, 100),
+              padding: const EdgeInsets.fromLTRB(20, 6, 20, 160),
               sliver: SliverLayoutBuilder(
                 builder: (context, constraints) {
                   final columns = constraints.crossAxisExtent >= 760
@@ -197,11 +134,19 @@ class _VideosScreenState extends State<VideosScreen> {
                       crossAxisCount: columns,
                       mainAxisSpacing: 16,
                       crossAxisSpacing: 16,
-                      childAspectRatio: columns == 1 ? 1.7 : .92,
+                      mainAxisExtent:
+                          ((constraints.crossAxisExtent - 16 * (columns - 1)) /
+                                  columns) *
+                              9 /
+                              16 +
+                          40 +
+                          MediaQuery.textScalerOf(context).scale(160),
                     ),
                     delegate: SliverChildBuilderDelegate(
                       (context, index) => _VideoCard(
                         video: videos[index],
+                        progress:
+                            _progress[_videos.indexOf(videos[index]) + 1] ?? 0,
                         onTap: () => _openVideo(videos[index]),
                       ),
                       childCount: videos.length,
@@ -216,56 +161,6 @@ class _VideosScreenState extends State<VideosScreen> {
     return page;
   }
 
-  Widget _header() => Container(
-    width: double.infinity,
-    decoration: BoxDecoration(
-      gradient: LinearGradient(
-        colors: _videosDark
-            ? const [Color(0xFF102637), Color(0xFF123044)]
-            : const [Color(0xFFF9FCFE), Color(0xFFEAF5F9)],
-      ),
-    ),
-    padding: const EdgeInsets.fromLTRB(20, 34, 20, 26),
-    child: Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 900),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'BIBLIOTECA DE PRIMEIROS SOCORROS',
-              style: GoogleFonts.ibmPlexMono(
-                color: _blue,
-                fontSize: 9.5,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1.2,
-              ),
-            ),
-            const SizedBox(height: 9),
-            Text(
-              'Conhecimento para agir com segurança.',
-              style: TextStyle(
-                color: _videosDark ? const Color(0xFFE6F4FF) : _navy,
-                fontSize: 28,
-                height: 1.15,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Encontre orientações objetivas para reconhecer situações comuns e saber qual é o próximo passo.',
-              style: TextStyle(
-                color: _videosDark ? const Color(0xFF9AB9CD) : _muted,
-                fontSize: 13.5,
-                height: 1.55,
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-
   Widget _filters() => Center(
     child: ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 940),
@@ -277,15 +172,21 @@ class _VideosScreenState extends State<VideosScreen> {
             TextField(
               controller: _searchController,
               onChanged: (value) => setState(() => _query = value),
-              style: const TextStyle(color: _navy, fontSize: 14),
+              style: TextStyle(
+                color: _videosDark ? Colors.white : _navy,
+                fontSize: 14,
+              ),
               decoration: InputDecoration(
-                hintText: 'Buscar por engasgo, RCP, queimaduras...',
+                hintText: tr(
+                  context,
+                  'Buscar por engasgo, RCP, queimaduras...',
+                ),
                 hintStyle: const TextStyle(color: Color(0xFF7893A3)),
                 prefixIcon: const Icon(Icons.search_rounded, color: _blue),
                 suffixIcon: _query.isEmpty
                     ? null
                     : IconButton(
-                        tooltip: 'Limpar busca',
+                        tooltip: tr(context, 'Limpar busca'),
                         onPressed: () {
                           _searchController.clear();
                           setState(() => _query = '');
@@ -309,55 +210,64 @@ class _VideosScreenState extends State<VideosScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
             Row(
               children: [
                 const Icon(Icons.filter_list_rounded, color: _blue, size: 18),
                 const SizedBox(width: 7),
-                const Text(
+                LocalizedText(
                   'Categorias',
                   style: TextStyle(
-                    color: _navy,
-                    fontWeight: FontWeight.w600,
+                    color: _videosDark ? Colors.white : _navy,
                     fontSize: 13,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 const Spacer(),
-                Text(
-                  '${_filteredVideos.length} conteúdos',
-                  style: const TextStyle(color: _muted, fontSize: 11),
+                LocalizedText(
+                  '${_filteredVideos.length} vídeos',
+                  style: TextStyle(
+                    color: _videosDark ? const Color(0xFF9AB9CD) : _muted,
+                    fontSize: 11,
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 11),
+            const SizedBox(height: 10),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: _categories.map((category) {
-                  final selected = category == _category;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 9),
-                    child: ChoiceChip(
-                      label: Text(category),
-                      selected: selected,
-                      showCheckmark: false,
-                      onSelected: (_) => setState(() => _category = category),
-                      backgroundColor: _videosDark
-                          ? const Color(0xFF102637)
-                          : Colors.white,
-                      selectedColor: _deepNavy,
-                      side: BorderSide(color: selected ? _deepNavy : _border),
-                      labelStyle: TextStyle(
-                        color: selected ? Colors.white : _muted,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                children: [
+                  for (final category in _categories)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 9),
+                      child: ChoiceChip(
+                        label: LocalizedText(category),
+                        selected: _category == category,
+                        showCheckmark: false,
+                        onSelected: (_) => setState(() => _category = category),
+                        selectedColor: const Color(0xFF0D2E47),
+                        backgroundColor: _videosDark
+                            ? const Color(0xFF102637)
+                            : Colors.white,
+                        side: BorderSide(
+                          color: _category == category ? _blue : _border,
+                        ),
+                        labelStyle: TextStyle(
+                          color: _category == category
+                              ? Colors.white
+                              : _videosDark
+                              ? const Color(0xFF9AB9CD)
+                              : _muted,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                     ),
-                  );
-                }).toList(),
+                ],
               ),
             ),
           ],
@@ -378,7 +288,7 @@ class _VideosScreenState extends State<VideosScreen> {
             child: Icon(Icons.search_off_rounded, color: _blue, size: 30),
           ),
           const SizedBox(height: 16),
-          const Text(
+          const LocalizedText(
             'Nenhum vídeo encontrado',
             style: TextStyle(
               color: _navy,
@@ -387,7 +297,7 @@ class _VideosScreenState extends State<VideosScreen> {
             ),
           ),
           const SizedBox(height: 7),
-          const Text(
+          const LocalizedText(
             'Tente outro termo ou selecione uma categoria diferente.',
             textAlign: TextAlign.center,
             style: TextStyle(color: _muted, fontSize: 13),
@@ -401,7 +311,7 @@ class _VideosScreenState extends State<VideosScreen> {
                 _category = 'Todos';
               });
             },
-            child: const Text('Limpar filtros'),
+            child: const LocalizedText('Limpar filtros'),
           ),
         ],
       ),
@@ -410,8 +320,13 @@ class _VideosScreenState extends State<VideosScreen> {
 }
 
 class _VideoCard extends StatelessWidget {
-  const _VideoCard({required this.video, required this.onTap});
-  final _FirstAidVideo video;
+  const _VideoCard({
+    required this.video,
+    required this.onTap,
+    required this.progress,
+  });
+  final int progress;
+  final FirstAidVideo video;
   final VoidCallback onTap;
 
   @override
@@ -430,21 +345,29 @@ class _VideoCard extends StatelessWidget {
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final horizontal =
-                constraints.maxWidth > constraints.maxHeight * 1.25;
             final preview = Container(
-              width: horizontal ? 132 : double.infinity,
-              height: horizontal ? double.infinity : null,
+              clipBehavior: Clip.antiAlias,
+              width: double.infinity,
+              height: constraints.maxWidth * 9 / 16,
               decoration: BoxDecoration(
                 color: video.color,
-                borderRadius: horizontal
-                    ? const BorderRadius.horizontal(left: Radius.circular(13))
-                    : const BorderRadius.vertical(top: Radius.circular(13)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(13),
+                ),
               ),
               child: Stack(
                 alignment: Alignment.center,
                 children: [
                   Icon(video.icon, color: Colors.white70, size: 43),
+                  Positioned.fill(
+                    child: Image.network(
+                      video.thumbnailUrl,
+                      fit: BoxFit.cover,
+                      excludeFromSemantics: true,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const SizedBox.shrink(),
+                    ),
+                  ),
                   const Positioned(
                     right: 11,
                     top: 11,
@@ -467,10 +390,10 @@ class _VideoCard extends StatelessWidget {
                         vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white24,
+                        color: Colors.black54,
                         borderRadius: BorderRadius.circular(5),
                       ),
-                      child: Text(
+                      child: LocalizedText(
                         video.category,
                         style: const TextStyle(
                           color: Colors.white,
@@ -490,7 +413,7 @@ class _VideoCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
+                    LocalizedText(
                       video.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -502,7 +425,7 @@ class _VideoCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 7),
-                    Text(
+                    LocalizedText(
                       video.description,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -513,8 +436,38 @@ class _VideoCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 9),
-                    Text(
-                      '${video.duration} DE CONTEÚDO',
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        LocalizedText(
+                          progress == 100
+                              ? 'Concluído · Rever aula'
+                              : progress > 0
+                              ? 'Continuar aula'
+                              : 'Começar aula',
+                          style: TextStyle(
+                            color: _videosDark ? Colors.white70 : _muted,
+                            fontSize: 11,
+                          ),
+                        ),
+                        LocalizedText(
+                          '$progress%',
+                          style: TextStyle(
+                            color: _videosDark ? Colors.white70 : _blue,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    LinearProgressIndicator(
+                      value: progress / 100,
+                      minHeight: 5,
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    const SizedBox(height: 9),
+                    LocalizedText(
+                      '${video.duration} · ${video.level}',
                       style: GoogleFonts.ibmPlexMono(
                         color: const Color(0xFF6F8C9D),
                         fontSize: 8,
@@ -525,95 +478,9 @@ class _VideoCard extends StatelessWidget {
                 ),
               ),
             );
-            return horizontal
-                ? Row(children: [preview, details])
-                : Column(
-                    children: [
-                      Expanded(child: preview),
-                      details,
-                    ],
-                  );
+            return Column(children: [preview, details]);
           },
         ),
-      ),
-    ),
-  );
-}
-
-class _VideoDetails extends StatelessWidget {
-  const _VideoDetails({required this.video});
-  final _FirstAidVideo video;
-
-  @override
-  Widget build(BuildContext context) => SafeArea(
-    child: Container(
-      margin: const EdgeInsets.all(12),
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: video.color.withValues(alpha: .12),
-                child: Icon(video.icon, color: video.color),
-              ),
-              const Spacer(),
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.close_rounded, color: _muted),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            video.category.toUpperCase(),
-            style: GoogleFonts.ibmPlexMono(
-              color: _blue,
-              fontSize: 9,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            video.title,
-            style: const TextStyle(
-              color: _navy,
-              fontSize: 22,
-              height: 1.2,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            video.description,
-            style: const TextStyle(color: _muted, fontSize: 13, height: 1.5),
-          ),
-          const SizedBox(height: 22),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              style: FilledButton.styleFrom(
-                backgroundColor: _blue,
-                padding: const EdgeInsets.symmetric(vertical: 15),
-              ),
-              onPressed: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Abrindo conteúdo: ${video.title}')),
-                );
-              },
-              icon: const Icon(Icons.play_arrow_rounded),
-              label: Text('Assistir agora · ${video.duration}'),
-            ),
-          ),
-        ],
       ),
     ),
   );

@@ -1,3 +1,8 @@
+import '../l10n/localized_text.dart';
+import 'dart:async';
+import '../data/first_aid_videos.dart';
+import '../screens/video_player_screen.dart';
+import '../services/learning_progress_service.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,6 +19,29 @@ class _LearningDashboardState extends State<LearningDashboard> {
   static const _blue = Color(0xFF217BA5);
   static const _green = Color(0xFF2A9876);
   static const _gold = Color(0xFFD99231);
+  Map<int, int> _progress = {};
+  Set<int> _completedIds = {};
+  StreamSubscription<Set<int>>? _completedSubscription;
+  StreamSubscription<Map<String, dynamic>?>? _subscription;
+  int? _lastLessonId;
+  int get _completed => _completedIds.length;
+  int get _minutes =>
+      (firstAidVideos.asMap().entries.fold<double>(0, (sum, entry) {
+                final parts = entry.value.duration.split(':');
+                return sum +
+                    (int.parse(parts[0]) * 60 + int.parse(parts[1])) *
+                        (_progress[entry.key + 1] ?? 0) /
+                        100;
+              }) /
+              60)
+          .round();
+  @override
+  void dispose() {
+    _completedSubscription?.cancel();
+    _subscription?.cancel();
+    super.dispose();
+  }
+
   int _bestStars = 0;
   int _quizzesCompleted = 0;
 
@@ -21,6 +49,29 @@ class _LearningDashboardState extends State<LearningDashboard> {
   void initState() {
     super.initState();
     _loadAchievements();
+    _completedSubscription = LearningProgressService.watchCompleted().listen((
+      ids,
+    ) {
+      if (mounted) setState(() => _completedIds = ids);
+    }, onError: (Object error) {});
+    _subscription = LearningProgressService.watchData().listen(
+      (data) {
+        if (!mounted) return;
+        setState(() {
+          _progress = LearningProgressService.decode(data);
+          _lastLessonId = LearningProgressService.lastAccessedLessonId(data);
+        });
+      },
+      onError: (Object error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: LocalizedText('Falha ao carregar progresso.'),
+            ),
+          );
+        }
+      },
+    );
   }
 
   Future<void> _loadAchievements() async {
@@ -51,7 +102,7 @@ class _LearningDashboardState extends State<LearningDashboard> {
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
+        content: LocalizedText(
           'Quiz concluído: $stars de 3 ${stars == 1 ? 'estrela' : 'estrelas'}!',
         ),
       ),
@@ -75,7 +126,7 @@ class _LearningDashboardState extends State<LearningDashboard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  LocalizedText(
                     'MINHA JORNADA',
                     style: TextStyle(
                       color: _blue,
@@ -85,7 +136,7 @@ class _LearningDashboardState extends State<LearningDashboard> {
                     ),
                   ),
                   const SizedBox(height: 5),
-                  Text(
+                  LocalizedText(
                     'Seu aprendizado em um só lugar',
                     style: TextStyle(
                       color: primary,
@@ -99,30 +150,12 @@ class _LearningDashboardState extends State<LearningDashboard> {
             TextButton.icon(
               onPressed: widget.onOpenLibrary,
               icon: const Icon(Icons.video_library_outlined, size: 18),
-              label: const Text('Ver biblioteca'),
+              label: const LocalizedText('Ver biblioteca'),
             ),
           ],
         ),
         const SizedBox(height: 14),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final wide = constraints.maxWidth >= 760;
-            final progress = _progressCard(surface, line, primary, secondary);
-            final goals = _goalsCard(surface, line, primary, secondary);
-            return wide
-                ? Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(flex: 3, child: progress),
-                      const SizedBox(width: 14),
-                      Expanded(flex: 2, child: goals),
-                    ],
-                  )
-                : Column(
-                    children: [progress, const SizedBox(height: 14), goals],
-                  );
-          },
-        ),
+        _progressCard(surface, line, primary, secondary),
       ],
     );
   }
@@ -132,108 +165,133 @@ class _LearningDashboardState extends State<LearningDashboard> {
     Color line,
     Color primary,
     Color secondary,
-  ) => Container(
-    padding: const EdgeInsets.all(20),
-    decoration: _decoration(surface, line),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            _summary(
-              Icons.check_circle_outline,
-              _green,
-              '2 de 6',
-              'concluídas',
-              primary,
-              secondary,
-            ),
-            const SizedBox(width: 12),
-            _summary(
-              Icons.schedule,
-              _blue,
-              '38 min',
-              'estudados',
-              primary,
-              secondary,
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        Text(
-          'Aulas que você concluiu',
-          style: TextStyle(color: primary, fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 11),
-        _completedLesson(
-          'Engasgo: como agir nos primeiros minutos',
-          '6 min',
-          primary,
-          secondary,
-        ),
-        _completedLesson(
-          'Kit de primeiros socorros em casa',
-          '5 min',
-          primary,
-          secondary,
-        ),
-        const SizedBox(height: 17),
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: _blue.withValues(alpha: .09),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: _blue.withValues(alpha: .25)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  ) {
+    final video = _lastLessonId == null
+        ? null
+        : firstAidVideos[_lastLessonId! - 1];
+    final videoProgress = video == null ? 0 : _progress[_lastLessonId!] ?? 0;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: _decoration(surface, line),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  const Icon(Icons.play_circle_outline, color: _blue, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Em progresso',
-                      style: TextStyle(
-                        color: primary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    '45%',
-                    style: TextStyle(color: _blue, fontWeight: FontWeight.w700),
-                  ),
-                ],
+              _summary(
+                Icons.check_circle_outline,
+                _green,
+                '$_completed de ${firstAidVideos.length}',
+                'concluídas',
+                primary,
+                secondary,
               ),
-              const SizedBox(height: 9),
-              Text(
-                'RCP: reconheça uma parada cardíaca',
-                style: TextStyle(color: primary, fontSize: 13),
-              ),
-              const SizedBox(height: 10),
-              const LinearProgressIndicator(
-                value: .45,
-                minHeight: 6,
-                borderRadius: BorderRadius.all(Radius.circular(6)),
-              ),
-              const SizedBox(height: 10),
-              Align(
-                alignment: Alignment.centerRight,
-                child: FilledButton.icon(
-                  onPressed: widget.onOpenLibrary,
-                  icon: const Icon(Icons.play_arrow_rounded, size: 18),
-                  label: const Text('Continuar aula'),
-                ),
+              const SizedBox(width: 12),
+              _summary(
+                Icons.schedule,
+                _blue,
+                '$_minutes min',
+                'estudados',
+                primary,
+                secondary,
               ),
             ],
           ),
-        ),
-      ],
-    ),
-  );
+          const SizedBox(height: 20),
+          LocalizedText(
+            'Aulas que você concluiu',
+            style: TextStyle(color: primary, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 11),
+          if (_completed == 0)
+            const LocalizedText('Nenhuma aula concluída ainda.'),
+          for (final entry in firstAidVideos.asMap().entries)
+            if (_completedIds.contains(entry.key + 1))
+              _completedLesson(
+                entry.value.title,
+                entry.value.duration,
+                primary,
+                secondary,
+              ),
+          const SizedBox(height: 17),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: _blue.withValues(alpha: .09),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: _blue.withValues(alpha: .25)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.play_circle_outline,
+                      color: _blue,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: LocalizedText(
+                        'Em progresso',
+                        style: TextStyle(
+                          color: primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    LocalizedText(
+                      '$videoProgress%',
+                      style: TextStyle(
+                        color: _blue,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 9),
+                LocalizedText(
+                  video?.title ?? 'Escolha uma aula para começar.',
+                  style: TextStyle(color: primary, fontSize: 13),
+                ),
+                const SizedBox(height: 10),
+                LinearProgressIndicator(
+                  value: videoProgress / 100,
+                  minHeight: 6,
+                  borderRadius: BorderRadius.all(Radius.circular(6)),
+                ),
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: FilledButton.icon(
+                    onPressed: video == null
+                        ? widget.onOpenLibrary
+                        : () => Navigator.push(
+                            context,
+                            MaterialPageRoute<void>(
+                              builder: (_) => VideoPlayerScreen(
+                                video: video,
+                                resumeProgress: videoProgress < 100
+                                    ? videoProgress
+                                    : 0,
+                              ),
+                            ),
+                          ),
+                    icon: const Icon(Icons.play_arrow_rounded, size: 18),
+                    label: const LocalizedText('Continuar aula'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
+  // Mantido isolado para não afetar a lógica existente de quiz e conquistas.
+  // ignore: unused_element
   Widget _goalsCard(Color surface, Color line, Color primary, Color secondary) {
     final quizUnlocked = _bestStars > 0;
     return Container(
@@ -246,12 +304,12 @@ class _LearningDashboardState extends State<LearningDashboard> {
             children: [
               const Icon(Icons.flag_outlined, color: _gold),
               const SizedBox(width: 8),
-              Text(
+              LocalizedText(
                 'Meta semanal',
                 style: TextStyle(color: primary, fontWeight: FontWeight.w700),
               ),
               const Spacer(),
-              Text(
+              LocalizedText(
                 '2/3 aulas',
                 style: TextStyle(color: _green, fontWeight: FontWeight.w700),
               ),
@@ -265,17 +323,17 @@ class _LearningDashboardState extends State<LearningDashboard> {
             borderRadius: BorderRadius.all(Radius.circular(7)),
           ),
           const SizedBox(height: 7),
-          Text(
+          LocalizedText(
             'Falta apenas uma aula para cumprir sua meta.',
             style: TextStyle(color: secondary, fontSize: 11.5),
           ),
           const SizedBox(height: 20),
-          Text(
+          LocalizedText(
             'Desafio das aulas concluídas',
             style: TextStyle(color: primary, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 6),
-          Text(
+          LocalizedText(
             'Responda ao quiz e conquiste até 3 estrelas.',
             style: TextStyle(color: secondary, fontSize: 12),
           ),
@@ -301,13 +359,13 @@ class _LearningDashboardState extends State<LearningDashboard> {
             child: OutlinedButton.icon(
               onPressed: _startQuiz,
               icon: const Icon(Icons.quiz_outlined),
-              label: Text(
+              label: LocalizedText(
                 _quizzesCompleted == 0 ? 'Começar quiz' : 'Refazer quiz',
               ),
             ),
           ),
           const SizedBox(height: 18),
-          Text(
+          LocalizedText(
             'Suas medalhas',
             style: TextStyle(color: primary, fontWeight: FontWeight.w700),
           ),
@@ -363,7 +421,7 @@ class _LearningDashboardState extends State<LearningDashboard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              LocalizedText(
                 value,
                 style: TextStyle(
                   color: primary,
@@ -371,7 +429,10 @@ class _LearningDashboardState extends State<LearningDashboard> {
                   fontSize: 16,
                 ),
               ),
-              Text(label, style: TextStyle(color: secondary, fontSize: 10.5)),
+              LocalizedText(
+                label,
+                style: TextStyle(color: secondary, fontSize: 10.5),
+              ),
             ],
           ),
         ),
@@ -391,9 +452,15 @@ class _LearningDashboardState extends State<LearningDashboard> {
         const Icon(Icons.check_circle_rounded, color: _green, size: 19),
         const SizedBox(width: 9),
         Expanded(
-          child: Text(title, style: TextStyle(color: primary, fontSize: 12.5)),
+          child: LocalizedText(
+            title,
+            style: TextStyle(color: primary, fontSize: 12.5),
+          ),
         ),
-        Text(duration, style: TextStyle(color: secondary, fontSize: 10.5)),
+        LocalizedText(
+          duration,
+          style: TextStyle(color: secondary, fontSize: 10.5),
+        ),
       ],
     ),
   );
@@ -426,7 +493,7 @@ class _LearningDashboardState extends State<LearningDashboard> {
           size: 25,
         ),
         const SizedBox(height: 6),
-        Text(
+        LocalizedText(
           label,
           textAlign: TextAlign.center,
           maxLines: 2,
@@ -501,7 +568,7 @@ class _LearningQuizDialogState extends State<_LearningQuizDialog> {
   Widget build(BuildContext context) {
     final question = _questions[_index];
     return AlertDialog(
-      title: Text('Quiz rápido · ${_index + 1}/${_questions.length}'),
+      title: LocalizedText('Quiz rápido · ${_index + 1}/${_questions.length}'),
       content: SizedBox(
         width: 460,
         child: Column(
@@ -510,7 +577,7 @@ class _LearningQuizDialogState extends State<_LearningQuizDialog> {
           children: [
             LinearProgressIndicator(value: (_index + 1) / _questions.length),
             const SizedBox(height: 18),
-            Text(
+            LocalizedText(
               question.$1,
               style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
             ),
@@ -548,7 +615,7 @@ class _LearningQuizDialogState extends State<_LearningQuizDialog> {
                               : Theme.of(context).hintColor,
                         ),
                         const SizedBox(width: 10),
-                        Expanded(child: Text(question.$2[answer])),
+                        Expanded(child: LocalizedText(question.$2[answer])),
                       ],
                     ),
                   ),
@@ -561,11 +628,13 @@ class _LearningQuizDialogState extends State<_LearningQuizDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar'),
+          child: const LocalizedText('Cancelar'),
         ),
         FilledButton(
           onPressed: _selected == null ? null : _next,
-          child: Text(_index == _questions.length - 1 ? 'Concluir' : 'Próxima'),
+          child: LocalizedText(
+            _index == _questions.length - 1 ? 'Concluir' : 'Próxima',
+          ),
         ),
       ],
     );

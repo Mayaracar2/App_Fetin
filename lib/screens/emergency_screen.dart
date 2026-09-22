@@ -1,3 +1,7 @@
+import '../l10n/localized_text.dart';
+import '../l10n/language_controller.dart';
+import '../widgets/section_app_bar.dart';
+import '../services/user_profile_service.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
@@ -23,12 +27,20 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
   @override
   void initState() {
     super.initState();
+    UserProfileService.profileVersion.addListener(carregarDados);
     carregarDados();
+    UserProfileService.syncCurrentUser();
+  }
+
+  @override
+  void dispose() {
+    UserProfileService.profileVersion.removeListener(carregarDados);
+    super.dispose();
   }
 
   Future<void> carregarDados() async {
     final prefs = await SharedPreferences.getInstance();
-
+    if (!mounted) return;
     setState(() {
       nome = prefs.getString('nome') ?? 'Não informado';
       sangue = prefs.getString('sangue') ?? 'Não informado';
@@ -42,7 +54,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
   void mostrarMensagem(String mensagem) {
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text(mensagem)));
+    ).showSnackBar(SnackBar(content: LocalizedText(mensagem)));
   }
 
   Widget _infoRow(IconData icon, String label, String valor) {
@@ -62,7 +74,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                LocalizedText(
                   label.toUpperCase(),
                   style: monoStyle(
                     fontSize: 9.5,
@@ -71,7 +83,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  valor,
+                  profileText(context, valor),
                   style: TextStyle(
                     fontSize: 14.5,
                     fontWeight: FontWeight.w500,
@@ -101,7 +113,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
           ? ElevatedButton.icon(
               onPressed: onTap,
               icon: Icon(icon),
-              label: Text(label),
+              label: LocalizedText(label),
               style: ElevatedButton.styleFrom(
                 backgroundColor: color,
                 foregroundColor: Colors.white,
@@ -112,7 +124,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
           : OutlinedButton.icon(
               onPressed: onTap,
               icon: Icon(icon, color: color),
-              label: Text(label, style: TextStyle(color: color)),
+              label: LocalizedText(label, style: TextStyle(color: color)),
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: color.withValues(alpha: 0.5)),
                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -130,12 +142,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
     final secondary = dark ? AppColors.textMuted : const Color(0xFF638092);
     return Scaffold(
       backgroundColor: background,
-      appBar: AppBar(
-        title: Text(
-          'EMERGÊNCIA',
-          style: monoStyle(fontSize: 12, color: primary),
-        ),
-      ),
+      appBar: sectionAppBar('Emergência'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
         child: Center(
@@ -171,7 +178,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
                         ),
                       ),
                       const SizedBox(height: 14),
-                      Text(
+                      LocalizedText(
                         'Precisa de ajuda agora?',
                         style: TextStyle(
                           fontSize: 18,
@@ -180,7 +187,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
                         ),
                       ),
                       const SizedBox(height: 6),
-                      Text(
+                      LocalizedText(
                         'Toque abaixo para acionar o SAMU (192).',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 13, color: secondary),

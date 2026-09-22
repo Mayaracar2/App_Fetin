@@ -1,3 +1,7 @@
+import '../l10n/localized_text.dart';
+import '../l10n/language_controller.dart';
+import '../widgets/section_app_bar.dart';
+import '../widgets/app_logo.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -5,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'profile_screen.dart';
 import '../theme/app_colors.dart';
+import '../services/user_profile_service.dart';
 
 const _navy = Color(0xFF17354B);
 const _deepNavy = Color(0xFF0D2E47);
@@ -31,6 +36,10 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
   Color get _secondaryText => _isDark ? AppColors.textMuted : _muted;
   Color get _outline => _isDark ? AppColors.border : _border;
   String nome = 'Não informado';
+  String email = 'Não informado';
+  String telefone = 'Não informado';
+  String nascimento = 'Não informado';
+  String cidade = 'Não informado';
   String sangue = 'Não informado';
   String alergias = 'Não informado';
   String medicamentos = 'Não informado';
@@ -41,7 +50,13 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    UserProfileService.profileVersion.addListener(_loadData);
+    _refreshProfile();
+  }
+
+  Future<void> _refreshProfile() async {
+    await _loadData();
+    await UserProfileService.syncCurrentUser();
   }
 
   String _read(SharedPreferences prefs, String key) {
@@ -54,6 +69,10 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
     if (!mounted) return;
     setState(() {
       nome = _read(prefs, 'nome');
+      email = _read(prefs, 'email');
+      telefone = _read(prefs, 'telefone');
+      nascimento = _read(prefs, 'nascimento');
+      cidade = _read(prefs, 'cidade');
       sangue = _read(prefs, 'sangue');
       alergias = _read(prefs, 'alergias');
       medicamentos = _read(prefs, 'medicamentos');
@@ -65,6 +84,7 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
 
   @override
   void dispose() {
+    UserProfileService.profileVersion.removeListener(_loadData);
     _scrollController.dispose();
     super.dispose();
   }
@@ -82,34 +102,16 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
     _isDark = Theme.of(context).brightness == Brightness.dark;
     final page = Scaffold(
       backgroundColor: _isDark ? AppColors.bgDark : _background,
-      appBar: AppBar(
-        backgroundColor: _isDark
-            ? AppColors.bgPanelAlt
-            : const Color(0xFFF9FCFE),
-        foregroundColor: _primaryText,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          'CARTEIRA MÉDICA',
-          style: GoogleFonts.ibmPlexMono(
-            color: _primaryText,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 1,
-          ),
-        ),
+      appBar: sectionAppBar(
+        'Cartão de emergência',
         actions: [
           IconButton(
-            tooltip: 'Editar perfil',
+            tooltip: tr(context, 'Editar perfil'),
             onPressed: _editProfile,
             icon: const Icon(Icons.edit_outlined),
           ),
           const SizedBox(width: 8),
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Divider(height: 1, color: _outline),
-        ),
       ),
       body: loading
           ? const Center(child: CircularProgressIndicator(color: _blue))
@@ -146,7 +148,7 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
                             ),
                             onPressed: _editProfile,
                             icon: const Icon(Icons.edit_outlined, size: 18),
-                            label: const Text('Atualizar informações'),
+                            label: const LocalizedText('Atualizar informações'),
                           ),
                         ),
                       ],
@@ -162,7 +164,7 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
   Widget _pageHeading() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(
+      LocalizedText(
         'PERFIL DE SAÚDE PROTEGIDO',
         style: GoogleFonts.ibmPlexMono(
           color: _blue,
@@ -172,7 +174,7 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
         ),
       ),
       const SizedBox(height: 8),
-      Text(
+      LocalizedText(
         'Sua ficha para situações de emergência.',
         style: TextStyle(
           color: _primaryText,
@@ -182,7 +184,7 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
         ),
       ),
       const SizedBox(height: 9),
-      Text(
+      LocalizedText(
         'Mantenha estes dados atualizados para ajudar a equipe durante o atendimento.',
         style: TextStyle(color: _secondaryText, fontSize: 13, height: 1.5),
       ),
@@ -212,29 +214,13 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
       children: [
         Row(
           children: [
-            Container(
-              width: 36,
-              height: 36,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: _red,
-                borderRadius: BorderRadius.circular(9),
-              ),
-              child: const Text(
-                '+',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 21,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+            const AppLogo(size: 36),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  LocalizedText(
                     'SOPS 2.0',
                     style: GoogleFonts.ibmPlexMono(
                       color: _primaryText,
@@ -243,7 +229,7 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
                       letterSpacing: .8,
                     ),
                   ),
-                  Text(
+                  LocalizedText(
                     'Carteira médica de emergência',
                     style: TextStyle(color: _secondaryText, fontSize: 9),
                   ),
@@ -258,7 +244,7 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
                     : const Color(0xFFEDF8F4),
                 borderRadius: BorderRadius.circular(5),
               ),
-              child: Text(
+              child: LocalizedText(
                 'ONLINE',
                 style: GoogleFonts.ibmPlexMono(
                   color: _green,
@@ -280,7 +266,7 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              LocalizedText(
                 'PERFIL DE SAÚDE',
                 style: GoogleFonts.ibmPlexMono(
                   color: const Color(0xFF8BDCFF),
@@ -300,7 +286,7 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
               ),
               const SizedBox(height: 5),
               Text(
-                '$sangue  ·  $doencas',
+                '${profileText(context, sangue)}  ·  ${profileText(context, doencas)}',
                 style: const TextStyle(
                   color: Color(0xFFB5DCED),
                   fontSize: 12,
@@ -325,7 +311,7 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
             CircleAvatar(radius: 5, backgroundColor: _green),
             SizedBox(width: 8),
             Expanded(
-              child: Text(
+              child: LocalizedText(
                 'Ficha sincronizada e disponível',
                 style: TextStyle(
                   color: _primaryText,
@@ -355,13 +341,20 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
   }
 
   String get _qrData => [
-    'SOPS 2.0 - CARTEIRA MEDICA DE EMERGENCIA',
-    'Nome: $nome',
-    'Tipo sanguineo: $sangue',
-    'Alergias: $alergias',
-    'Medicamentos: $medicamentos',
-    'Condicoes: $doencas',
-    'Contato de emergencia: $contato',
+    tr(context, 'SOPS 2.0 - CARTEIRA MEDICA DE EMERGENCIA'),
+    for (final entry in {
+      'Nome': nome,
+      'E-mail': email,
+      'Telefone': telefone,
+      'Data de nascimento': nascimento,
+      'Cidade': cidade,
+      'Tipo sanguíneo': sangue,
+      'Alergias': alergias,
+      'Medicamentos': medicamentos,
+      'Condições': doencas,
+      'Contato de emergência': contato,
+    }.entries)
+      '${tr(context, entry.key)}: ${profileText(context, entry.value)}',
   ].join('\n');
 
   Widget _qrAccessCard() => Container(
@@ -421,7 +414,7 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
                   color: _isDark ? AppColors.border : const Color(0xFFB9D8E8),
                 ),
               ),
-              child: Text(
+              child: LocalizedText(
                 'ACESSO RÁPIDO',
                 style: GoogleFonts.ibmPlexMono(
                   color: _blue,
@@ -432,7 +425,7 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
               ),
             ),
             const SizedBox(height: 11),
-            Text(
+            LocalizedText(
               'Escaneie a carteira médica',
               textAlign: TextAlign.center,
               style: TextStyle(
@@ -442,7 +435,7 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
               ),
             ),
             const SizedBox(height: 7),
-            Text(
+            LocalizedText(
               'O QR Code reúne os dados essenciais desta ficha para consulta rápida durante um atendimento.',
               textAlign: TextAlign.center,
               style: TextStyle(
@@ -457,7 +450,7 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
               children: [
                 Icon(Icons.lock_outline_rounded, color: _green, size: 16),
                 SizedBox(width: 6),
-                Text(
+                LocalizedText(
                   'Gerado com os dados salvos no aparelho',
                   style: TextStyle(color: _green, fontSize: 10.5),
                 ),
@@ -492,7 +485,7 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        LocalizedText(
           'INFORMAÇÕES PARA O ATENDIMENTO',
           style: GoogleFonts.ibmPlexMono(
             color: _blue,
@@ -502,6 +495,30 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
           ),
         ),
         const SizedBox(height: 18),
+        _DataRow(
+          icon: Icons.email_outlined,
+          label: 'E-mail',
+          value: email,
+          color: _blue,
+        ),
+        _DataRow(
+          icon: Icons.phone_outlined,
+          label: 'Telefone da vítima',
+          value: telefone,
+          color: const Color(0xFF517A92),
+        ),
+        _DataRow(
+          icon: Icons.cake_outlined,
+          label: 'Data de nascimento',
+          value: nascimento,
+          color: const Color(0xFFA36B1B),
+        ),
+        _DataRow(
+          icon: Icons.location_city_outlined,
+          label: 'Cidade',
+          value: cidade,
+          color: _green,
+        ),
         _DataRow(
           icon: Icons.bloodtype_outlined,
           label: 'Tipo sanguíneo',
@@ -553,7 +570,7 @@ class _MedicalCardScreenState extends State<MedicalCardScreen> {
         Icon(Icons.emergency_outlined, color: _red, size: 21),
         SizedBox(width: 11),
         Expanded(
-          child: Text(
+          child: LocalizedText(
             'Em caso de emergência, apresente esta carteira à equipe. Ligue 192 para acionar o SAMU.',
             style: TextStyle(
               color: _isDark
@@ -589,7 +606,7 @@ class _MedicalTag extends StatelessWidget {
         Icon(icon, color: const Color(0xFFD6ECFB), size: 12),
         const SizedBox(width: 5),
         Text(
-          label,
+          profileText(context, label),
           style: const TextStyle(color: Color(0xFFD6ECFB), fontSize: 9.5),
         ),
       ],
@@ -644,7 +661,7 @@ class _DataRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                LocalizedText(
                   label.toUpperCase(),
                   style: GoogleFonts.ibmPlexMono(
                     color: dark ? AppColors.textMuted : const Color(0xFF6F8C9D),
@@ -655,7 +672,7 @@ class _DataRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  value,
+                  profileText(context, value),
                   style: TextStyle(
                     color: dark ? AppColors.textPrimary : _navy,
                     fontSize: 13.5,

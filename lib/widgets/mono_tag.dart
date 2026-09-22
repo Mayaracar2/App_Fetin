@@ -1,3 +1,4 @@
+import '../l10n/localized_text.dart';
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
@@ -22,7 +23,7 @@ class MonoTag extends StatelessWidget {
     final effectiveColor = !dark && color == AppColors.accentCyan
         ? AppColors.accentBlue
         : color;
-    final label = Text(
+    final label = LocalizedText(
       text.toUpperCase(),
       style: monoStyle(fontSize: fontSize, color: effectiveColor),
     );
